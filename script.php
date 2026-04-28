@@ -104,6 +104,7 @@ return new class () implements ServiceProviderInterface {
 								<a class="btn btn-primary text-white w-100" href="https://t.me/webtolkru" target="_blank" rel="noopener noreferrer">' . Text::_('PKG_LIB_WTMAX_WEBTOLK_TELEGRAM_CHANNEL') . '</a>
 								<a class="btn btn-success text-white w-100" href="https://max.ru/join/LChBfwGDmArJpK6--oS0qVAJA1WdRk0OPXciwryF4ZY" target="_blank" rel="noopener noreferrer">' . Text::_('PKG_LIB_WTMAX_MAX_CHANNEL') . '</a>
 							</div>
+							' . Text::_('PKG_LIB_WTMAX_MAYBE_INTERESTING') . '
 						</div>
 					</div>';
 
