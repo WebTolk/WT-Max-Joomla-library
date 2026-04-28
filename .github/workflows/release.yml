@@ -43,10 +43,12 @@ jobs:
         run: php build/release.php package-from-lock --package=webtolk/max --env-file="${GITHUB_ENV}"
 
       - name: Upload package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wt-max-library-package
           path: .packages/*.zip
+          include-hidden-files: true
+          if-no-files-found: error
 
       - name: Publish GitHub release
         if: env.CREATE_RELEASE == 'true'
