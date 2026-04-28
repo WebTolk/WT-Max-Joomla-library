@@ -1,0 +1,55 @@
+name: Build And Release WT Max Package
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: zip
+          tools: composer
+
+      - name: Resolve release metadata
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "CREATE_RELEASE=true" >> "$GITHUB_ENV"
+          else
+            echo "CREATE_RELEASE=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Update MAX SDK from upstream by Composer
+        shell: bash
+        run: |
+          composer config repositories.webtolk-max vcs https://github.com/WebTolk/Max-platform-PHP-SDK.git
+          composer update --no-interaction --no-progress webtolk/max --with-dependencies
+
+      - name: Build Joomla package
+        run: php build/release.php package-from-lock --package=webtolk/max --env-file="${GITHUB_ENV}"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wt-max-library-package
+          path: .packages/*.zip
+
+      - name: Publish GitHub release
+        if: env.CREATE_RELEASE == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .packages/*.zip

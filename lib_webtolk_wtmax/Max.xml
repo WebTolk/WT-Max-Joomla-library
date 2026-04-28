@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension type="library" method="upgrade">
+	<name>WebTolk Max library</name>
+	<libraryname>Webtolk/Wtmax</libraryname>
+	<version>__DEPLOY_VERSION__</version>
+	<description>LIB_WEBTOLK_MAX_DESC</description>
+	<creationDate>__DEPLOY_DATE__</creationDate>
+	<copyright>Copyright (c) 2026 Sergey Tolkachyov. All rights reserved.</copyright>
+	<license>GNU/GPL 3.0</license>
+	<author>Sergey Tolkachyov</author>
+	<authorEmail>info@web-tolk.ru</authorEmail>
+	<authorUrl>https://web-tolk.ru</authorUrl>
+	<namespace path="src">Webtolk\Wtmax</namespace>
+	<scriptfile>script.php</scriptfile>
+	<languages folder="language">
+		<language tag="ru-RU">ru-RU/lib_webtolk_max.ini</language>
+		<language tag="en-GB">en-GB/lib_webtolk_max.ini</language>
+	</languages>
+	<files>
+		<folder>src</folder>
+		<filename>Max.xml</filename>
+		<filename>script.php</filename>
+	</files>
+</extension>

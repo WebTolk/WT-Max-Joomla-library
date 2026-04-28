@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<extension type="package" method="upgrade">
+	<name>WT Max library package</name>
+	<author>Sergey Tolkachyov</author>
+	<creationDate>__DEPLOY_DATE__</creationDate>
+	<packagename>lib_wtmax</packagename>
+	<version>__DEPLOY_VERSION__</version>
+	<url>https://web-tolk.ru</url>
+	<packager>Sergey Tolkachyov</packager>
+	<description>MAX API Joomla library with a system plugin for configuration and connection diagnostics.</description>
+	<license>GNU GPL 3.0</license>
+	<scriptfile>script.php</scriptfile>
+	<languages>
+		<language tag="ru-RU">language/ru-RU/pkg_lib_wtmax.sys.ini</language>
+		<language tag="en-GB">language/en-GB/pkg_lib_wtmax.sys.ini</language>
+	</languages>
+	<files>
+		<folder type="library" id="Webtolk/Wtmax">lib_webtolk_wtmax</folder>
+		<folder type="plugin" id="wtmax" group="system">plg_system_wtmax</folder>
+	</files>
+</extension>

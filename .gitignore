@@ -1,0 +1,14 @@
+/.agents/
+/.idea/
+/.serena/
+/.playwright-mcp/
+/.packages/
+/.phing/
+/docs/
+/build/.stage/
+/build/.tmp/
+/build/composer-sdk/
+/build/sdk-overlay/
+/lib_webtolk_wtmax/src/libraries/vendor/
+/composer.lock
+/phing.xml

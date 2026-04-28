@@ -1,0 +1,35 @@
+{
+  "type": "joomla-library",
+  "description": "Joomla wrapper for WebTolk MAX PHP SDK",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/WebTolk/WT-Max-Joomla-library",
+  "authors": [
+    {
+      "name": "Sergey Tolkachyov",
+      "role": "Maintainer",
+      "email": "info@web-tolk.ru",
+      "homepage": "https://web-tolk.ru"
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "support": {
+    "source": "https://github.com/WebTolk/WT-Max-Joomla-library",
+    "issues": "https://github.com/WebTolk/WT-Max-Joomla-library/issues"
+  },
+  "require": {
+    "php": ">=8.1",
+    "webtolk/max": "*"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "platform": {
+      "php": "8.1"
+    },
+    "vendor-dir": "build/.tmp/composer-vendor",
+    "github-protocols": [
+      "https"
+    ],
+    "prepend-autoloader": false
+  }
+}
