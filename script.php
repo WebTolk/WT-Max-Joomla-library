@@ -17,6 +17,7 @@ use Joomla\CMS\Application\AdministratorApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerAdapter;
 use Joomla\CMS\Installer\InstallerScriptInterface;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\Version;
 use Joomla\Database\DatabaseDriver;
 use Joomla\DI\Container;
@@ -37,6 +38,7 @@ return new class () implements ServiceProviderInterface {
 				{
 					$this->app = $app;
 					$this->db  = Factory::getContainer()->get('DatabaseDriver');
+					Factory::getLanguage()->load('pkg_lib_wtmax.sys', __DIR__);
 				}
 
 				public function install(InstallerAdapter $adapter): bool
@@ -65,6 +67,46 @@ return new class () implements ServiceProviderInterface {
 					{
 						$this->enablePlugin();
 					}
+
+					$smile = '';
+
+					if ($type !== 'uninstall')
+					{
+						$smiles = ['&#9786;', '&#128512;', '&#128521;', '&#128525;', '&#128526;', '&#128522;', '&#128591;'];
+						$smile  = $smiles[array_rand($smiles)];
+					}
+
+					$typeUpper = strtoupper($type);
+					$html      = '
+					<div class="row m-0">
+						<div class="col-12 col-md-8 p-0 pe-2">
+							<h2>' . $smile . ' ' . Text::_('PKG_LIB_WTMAX_AFTER_' . $typeUpper) . ' <br/>' . Text::_('PKG_LIB_WTMAX') . '</h2>
+							<p>' . Text::_('PKG_LIB_WTMAX_XML_DESCRIPTION') . '</p>
+							<div class="alert alert-info">
+								<strong>' . Text::_('PKG_LIB_WTMAX_VERSION') . '</strong><br/>
+								' . Text::_('PKG_LIB_WTMAX_POSTFLIGHT_READY') . '
+							</div>
+							<ul class="mb-3">
+								<li>' . Text::_('PKG_LIB_WTMAX_POSTFLIGHT_STEP_ENABLE') . '</li>
+								<li>' . Text::_('PKG_LIB_WTMAX_POSTFLIGHT_STEP_TOKEN') . '</li>
+								<li>' . Text::_('PKG_LIB_WTMAX_POSTFLIGHT_STEP_STATUS') . '</li>
+							</ul>
+						</div>
+						<div class="col-12 col-md-4 p-0 d-flex flex-column justify-content-start">
+							<img width="180" src="https://web-tolk.ru/web_tolk_logo_wide.png" alt="WebTolk">
+							<p>Joomla Extensions</p>
+							<p class="btn-group">
+								<a class="btn btn-sm btn-outline-primary" href="https://web-tolk.ru" target="_blank" rel="noopener noreferrer">https://web-tolk.ru</a>
+								<a class="btn btn-sm btn-outline-primary" href="mailto:info@web-tolk.ru"><i class="icon-envelope"></i> info@web-tolk.ru</a>
+							</p>
+							<div class="btn-group-vertical mb-3 web-tolk-btn-links" role="group" aria-label="WebTolk community links">
+								<a class="btn btn-danger text-white w-100" href="https://t.me/joomlaru" target="_blank" rel="noopener noreferrer">' . Text::_('PKG_LIB_WTMAX_JOOMLARU_TELEGRAM_CHAT') . '</a>
+								<a class="btn btn-primary text-white w-100" href="https://t.me/webtolkru" target="_blank" rel="noopener noreferrer">' . Text::_('PKG_LIB_WTMAX_WEBTOLK_TELEGRAM_CHANNEL') . '</a>
+							</div>
+						</div>
+					</div>';
+
+					$this->app->enqueueMessage($html, 'info');
 
 					return true;
 				}
