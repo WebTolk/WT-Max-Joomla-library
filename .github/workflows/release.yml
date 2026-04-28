@@ -2,16 +2,6 @@ name: Build And Release WT Max Package
 
 on:
   workflow_dispatch:
-    inputs:
-      publish_release:
-        description: Publish a GitHub Release from this run
-        required: true
-        type: boolean
-        default: true
-      tag_name:
-        description: Release tag for manual runs, for example v0.1.0
-        required: false
-        type: string
   push:
     tags:
       - 'v*'
@@ -43,21 +33,16 @@ jobs:
       - name: Build Joomla package
         run: php build/release.php package-from-lock --package=webtolk/max --env-file="${GITHUB_ENV}"
 
-      - name: Validate manual release inputs
-        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+      - name: Derive release tag from upstream version
         shell: bash
         run: |
-          if [[ -z "${{ inputs.tag_name }}" ]]; then
-            echo "Manual release runs require workflow_dispatch input tag_name, for example v0.1.0." >&2
-            exit 1
-          fi
+          echo "SDK_RELEASE_TAG=v${SDK_BUILD_VERSION#v}" >> "$GITHUB_ENV"
 
       - name: Publish GitHub release
-        if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.publish_release)
         uses: softprops/action-gh-release@v3
         with:
           name: WT Max Joomla Library ${{ env.SDK_BUILD_VERSION }}
-          tag_name: ${{ inputs.tag_name != '' && inputs.tag_name || github.ref_name }}
+          tag_name: ${{ env.SDK_RELEASE_TAG }}
           target_commitish: ${{ github.sha }}
           fail_on_unmatched_files: true
           generate_release_notes: true

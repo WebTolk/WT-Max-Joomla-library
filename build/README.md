@@ -22,5 +22,5 @@ GitHub CI rule:
 - the same command reads version and time for `webtolk/max` from `composer.lock`
 - the same command stamps the project placeholders with that SDK version and date
 - the same command builds the ZIP
-- GitHub Actions attaches the built ZIP directly to the GitHub Release on tag runs
-- Manual `workflow_dispatch` can also publish a release, but it requires an explicit `tag_name` input
+- GitHub Actions derives the release tag from the resolved upstream SDK version
+- GitHub Actions attaches the built ZIP directly to the GitHub Release for that upstream version
