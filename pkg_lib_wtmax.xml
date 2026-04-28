@@ -18,4 +18,8 @@
 		<folder type="library" id="Webtolk/Wtmax">lib_webtolk_wtmax</folder>
 		<folder type="plugin" id="wtmax" group="system">plg_system_wtmax</folder>
 	</files>
+	<updateservers>
+		<server type="extension" priority="1" name="WT Max platform updates">https://web-tolk.ru/component/swjprojects/jupdate?element=lib_wtmax</server>
+	</updateservers>
+	<changelogurl>https://web-tolk.ru/jchangelog?element=lib_wtmax</changelogurl>
 </extension>
