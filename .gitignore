@@ -3,6 +3,7 @@
 /.serena/
 /.playwright-mcp/
 /.packages/
+/dist/
 /.phing/
 /docs/
 /build/.stage/

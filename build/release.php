@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-const PACKAGE_NAME = 'WT Max library package';
+const ARCHIVE_BASENAME = 'WT-Max-Joomla-library';
 const DEFAULT_VERSION = '0.1.0';
 const DEFAULT_PACKAGE = 'webtolk/max';
 const DEFAULT_VENDOR_SOURCE = 'build/.tmp/composer-vendor';
 const DEFAULT_VENDOR_TARGET = 'lib_webtolk_wtmax/src/libraries/vendor';
 const DEFAULT_STAGE_DIR = 'build/.stage/package';
-const DEFAULT_OUTPUT_DIR = '.packages';
+const DEFAULT_OUTPUT_DIR = 'dist';
 const DEFAULT_BUILD_DATE_FORMAT = 'd.m.Y';
 
 $projectRoot = dirname(__DIR__);
@@ -198,7 +198,7 @@ function buildPackage(
 		fail('Package name and deploy version must be configured before packaging.');
 	}
 
-	$archiveFile = $outputDir . DIRECTORY_SEPARATOR . sprintf('%s_%s.zip', PACKAGE_NAME, $deployVersion);
+	$archiveFile = $outputDir . DIRECTORY_SEPARATOR . sprintf('%s_%s.zip', ARCHIVE_BASENAME, $deployVersion);
 	$librarySrc = $projectRoot . '/lib_webtolk_wtmax/src';
 	$vendorAutoload = $projectRoot . '/' . DEFAULT_VENDOR_TARGET . '/autoload.php';
 

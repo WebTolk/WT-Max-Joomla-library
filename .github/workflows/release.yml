@@ -24,15 +24,6 @@ jobs:
           extensions: zip
           tools: composer
 
-      - name: Resolve release metadata
-        shell: bash
-        run: |
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            echo "CREATE_RELEASE=true" >> "$GITHUB_ENV"
-          else
-            echo "CREATE_RELEASE=false" >> "$GITHUB_ENV"
-          fi
-
       - name: Update MAX SDK from upstream by Composer
         shell: bash
         run: |
@@ -42,16 +33,9 @@ jobs:
       - name: Build Joomla package
         run: php build/release.php package-from-lock --package=webtolk/max --env-file="${GITHUB_ENV}"
 
-      - name: Upload package artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: wt-max-library-package
-          path: .packages/*.zip
-          include-hidden-files: true
-          if-no-files-found: error
-
       - name: Publish GitHub release
-        if: env.CREATE_RELEASE == 'true'
-        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v3
         with:
-          files: .packages/*.zip
+          name: WT Max Joomla Library ${{ env.SDK_BUILD_VERSION }}
+          files: dist/*.zip

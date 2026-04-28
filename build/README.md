@@ -22,4 +22,4 @@ GitHub CI rule:
 - the same command reads version and time for `webtolk/max` from `composer.lock`
 - the same command stamps the project placeholders with that SDK version and date
 - the same command builds the ZIP
-- GitHub Actions publishes the release artifact on tag builds
+- GitHub Actions attaches the built ZIP directly to the GitHub Release only on tag runs
