@@ -234,8 +234,9 @@ $max->setTransport(
 2. копирует только `src` в `lib_webtolk_wtmax/src/libraries/vendor/max/src`
 3. берёт версию и дату из установленного `webtolk/max`
 4. подставляет их в плейсхолдеры проекта при сборке ZIP
-5. только на tag run прикрепляет итоговый ZIP к GitHub Release
-   Обычный branch/manual run может собрать пакет, но релиз не публикует.
+5. на tag run прикрепляет итоговый ZIP к GitHub Release автоматически
+6. на manual `workflow_dispatch` тоже может опубликовать релиз, но только если явно передан `tag_name`
+   Это сделано специально, чтобы не получить случайный release с тегом `main`.
 
 ## Связанные файлы проекта
 
