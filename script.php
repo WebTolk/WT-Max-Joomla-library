@@ -38,7 +38,6 @@ return new class () implements ServiceProviderInterface {
 				{
 					$this->app = $app;
 					$this->db  = Factory::getContainer()->get('DatabaseDriver');
-					Factory::getLanguage()->load('pkg_lib_wtmax.sys', __DIR__);
 				}
 
 				public function install(InstallerAdapter $adapter): bool
