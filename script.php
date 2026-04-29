@@ -80,16 +80,8 @@ return new class () implements ServiceProviderInterface {
 					<div class="row m-0">
 						<div class="col-12 col-md-8 p-0 pe-2">
 							<h2>' . $smile . ' ' . Text::_('PKG_LIB_WTMAX_AFTER_' . $typeUpper) . ' <br/>' . Text::_('PKG_LIB_WTMAX') . '</h2>
-							<p>' . Text::_('PKG_LIB_WTMAX_XML_DESCRIPTION') . '</p>
-							<div class="alert alert-info">
-								<strong>' . Text::_('PKG_LIB_WTMAX_VERSION') . '</strong><br/>
-								' . Text::_('PKG_LIB_WTMAX_POSTFLIGHT_READY') . '
-							</div>
-							<ul class="mb-3">
-								<li>' . Text::_('PKG_LIB_WTMAX_POSTFLIGHT_STEP_ENABLE') . '</li>
-								<li>' . Text::_('PKG_LIB_WTMAX_POSTFLIGHT_STEP_TOKEN') . '</li>
-								<li>' . Text::_('PKG_LIB_WTMAX_POSTFLIGHT_STEP_STATUS') . '</li>
-							</ul>
+							' . Text::_('PKG_LIB_WTMAX_XML_DESCRIPTION') . '
+							' . Text::_('PKG_LIB_WTMAX_WHATS_NEW') . '
 						</div>
 						<div class="col-12 col-md-4 p-0 d-flex flex-column justify-content-start">
 							<img width="180" src="https://web-tolk.ru/web_tolk_logo_wide.png" alt="WebTolk">
@@ -117,7 +109,7 @@ return new class () implements ServiceProviderInterface {
 					if (!(new Version())->isCompatible($this->minimumJoomla))
 					{
 						$this->app->enqueueMessage(
-							sprintf('Package requires Joomla %s or newer.', $this->minimumJoomla),
+							Text::sprintf('PKG_LIB_WTMAX_ERROR_COMPATIBLE_JOOMLA', $this->minimumJoomla),
 							'error'
 						);
 
@@ -127,7 +119,7 @@ return new class () implements ServiceProviderInterface {
 					if (!(version_compare(PHP_VERSION, $this->minimumPhp) >= 0))
 					{
 						$this->app->enqueueMessage(
-							sprintf('Package requires PHP %s or newer.', $this->minimumPhp),
+							Text::sprintf('PKG_LIB_WTMAX_ERROR_COMPATIBLE_PHP', $this->minimumPhp),
 							'error'
 						);
 

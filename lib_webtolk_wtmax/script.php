@@ -109,7 +109,7 @@ return new class () implements ServiceProviderInterface {
 					if (!(new Version())->isCompatible($this->minimumJoomla))
 					{
 						$this->app->enqueueMessage(
-							Text::sprintf('LIB_WEBTOLK_MAX_INSTALL_MIN_JOOMLA', $this->minimumJoomla),
+							Text::sprintf('LIB_WEBTOLK_MAX_ERROR_COMPATIBLE_JOOMLA', $this->minimumJoomla),
 							'error'
 						);
 
@@ -119,7 +119,7 @@ return new class () implements ServiceProviderInterface {
 					if (!(version_compare(PHP_VERSION, $this->minimumPhp) >= 0))
 					{
 						$this->app->enqueueMessage(
-							Text::sprintf('LIB_WEBTOLK_MAX_INSTALL_MIN_PHP', $this->minimumPhp),
+							Text::sprintf('LIB_WEBTOLK_MAX_ERROR_COMPATIBLE_PHP', $this->minimumPhp),
 							'error'
 						);
 
@@ -189,7 +189,11 @@ return new class () implements ServiceProviderInterface {
 
 							if (!Folder::create($newDir))
 							{
-								Log::add(Text::sprintf('JLIB_INSTALLER_ERROR_CREATE_DIRECTORY', $newDir), Log::WARNING, 'jerror');
+								Log::add(
+									Text::sprintf('JLIB_INSTALLER_ABORT_CREATE_DIRECTORY', $installer->getManifest()->name, $newDir),
+									Log::WARNING,
+									'jerror'
+								);
 
 								return false;
 							}
