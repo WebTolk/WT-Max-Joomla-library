@@ -30,6 +30,7 @@
 					name="bot_token"
 					label="PLG_WTMAX_BOT_TOKEN"
 					description="PLG_WTMAX_BOT_TOKEN_DESC"
+					maxlength="512"
 					filter="raw"/>
 				<field type="radio"
 					name="log_separate_file"
