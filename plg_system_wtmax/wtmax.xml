@@ -26,12 +26,14 @@
 			<fieldset name="basic">
 				<field addfieldprefix="Joomla\Plugin\System\Wtmax\Field" type="plugininfo" name="plugininfo"/>
 				<field addfieldprefix="Webtolk\Wtmax\Field" type="connectionstatus" name="connectionstatus"/>
-				<field type="password"
+				<field type="text"
 					name="bot_token"
 					label="PLG_WTMAX_BOT_TOKEN"
 					description="PLG_WTMAX_BOT_TOKEN_DESC"
 					maxlength="512"
-					filter="raw"/>
+					filter="raw"
+					autocomplete="off"
+					spellcheck="false"/>
 				<field type="radio"
 					name="log_separate_file"
 					label="PLG_WTMAX_LOG_SEPARATE_FILE"
