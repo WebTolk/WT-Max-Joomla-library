@@ -31,6 +31,12 @@
 					label="PLG_WTMAX_BOT_TOKEN"
 					description="PLG_WTMAX_BOT_TOKEN_DESC"
 					filter="raw"/>
+				<field addfieldprefix="Webtolk\Wtmax\Field"
+					type="chatmodalselect"
+					name="chat_id"
+					label="PLG_WTMAX_CHAT_ID"
+					description="PLG_WTMAX_CHAT_ID_DESC"
+					filter="raw"/>
 				<field type="radio"
 					name="log_separate_file"
 					label="PLG_WTMAX_LOG_SEPARATE_FILE"

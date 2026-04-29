@@ -15,12 +15,20 @@ composer update webtolk/max
 php build/release.php package-from-lock --package=webtolk/max
 ```
 
+Manual hotfix version example:
+
+```bash
+composer update webtolk/max
+php build/release.php package-from-lock --package=webtolk/max --version=0.1.0.1
+```
+
 GitHub CI rule:
 - GitHub Actions updates `webtolk/max` from upstream by Composer
 - GitHub Actions runs `build/release.php package-from-lock`
 - that command copies only `webtolk/max/src` into `lib_webtolk_wtmax/src/libraries/vendor/max/src`
 - the same command reads version and time for `webtolk/max` from `composer.lock`
-- the same command stamps the project placeholders with that SDK version and date
+- by default, the same command stamps the project placeholders with that SDK version and date
+- on `workflow_dispatch`, GitHub Actions may pass `package_version` to override only the Joomla package deploy version for a manual hotfix release
 - the same command builds the ZIP
-- GitHub Actions derives the release tag from the resolved upstream SDK version
-- GitHub Actions attaches the built ZIP directly to the GitHub Release for that upstream version
+- GitHub Actions derives the release tag from the final Joomla package version
+- GitHub Actions attaches the built ZIP directly to the GitHub Release for that Joomla package version

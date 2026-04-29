@@ -2,6 +2,11 @@ name: Build And Release WT Max Package
 
 on:
   workflow_dispatch:
+    inputs:
+      package_version:
+        description: 'Необязательная версия Joomla-пакета для ручного хотфикса, например 0.1.0.1. Если оставить пустым, будет использована версия апстримного SDK из composer.lock.'
+        required: false
+        type: string
   push:
     tags:
       - 'v*'
@@ -31,18 +36,26 @@ jobs:
           composer update --no-interaction --no-progress --with-dependencies
 
       - name: Build Joomla package
-        run: php build/release.php package-from-lock --package=webtolk/max --env-file="${GITHUB_ENV}"
-
-      - name: Derive release tag from upstream version
         shell: bash
         run: |
-          echo "SDK_RELEASE_TAG=v${SDK_BUILD_VERSION#v}" >> "$GITHUB_ENV"
+          command=(php build/release.php package-from-lock --package=webtolk/max --env-file="${GITHUB_ENV}")
+
+          if [ -n "${{ inputs.package_version }}" ]; then
+            command+=(--version="${{ inputs.package_version }}")
+          fi
+
+          "${command[@]}"
+
+      - name: Derive release tag from package version
+        shell: bash
+        run: |
+          echo "PACKAGE_RELEASE_TAG=v${PACKAGE_BUILD_VERSION#v}" >> "$GITHUB_ENV"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          name: WT Max Joomla Library ${{ env.SDK_BUILD_VERSION }}
-          tag_name: ${{ env.SDK_RELEASE_TAG }}
+          name: WT Max Joomla Library ${{ env.PACKAGE_BUILD_VERSION }}
+          tag_name: ${{ env.PACKAGE_RELEASE_TAG }}
           target_commitish: ${{ github.sha }}
           fail_on_unmatched_files: true
           generate_release_notes: true

@@ -21,4 +21,7 @@
 		<filename>Max.xml</filename>
 		<filename>script.php</filename>
 	</files>
+	<layouts folder="layouts" destination="libraries/webtolk/wtmax">
+		<folder>fields</folder>
+	</layouts>
 </extension>

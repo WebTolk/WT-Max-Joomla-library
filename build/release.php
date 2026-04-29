@@ -55,7 +55,21 @@ switch ($command)
 			resolvePath($projectRoot, $options['lock-file'] ?? 'composer.lock'),
 			trim((string) ($options['package'] ?? DEFAULT_PACKAGE)),
 		);
-		appendMetadataEnvFile($metadata, trim((string) ($options['env-file'] ?? '')));
+		$deployVersion = resolveDeployVersion(
+			trim((string) ($options['version'] ?? '')),
+			$metadata['version']
+		);
+		$deployDate = resolveDeployDate(
+			trim((string) ($options['date'] ?? '')),
+			$metadata['date'],
+			trim((string) ($options['version'] ?? '')) !== ''
+		);
+		appendMetadataEnvFile(
+			$metadata,
+			trim((string) ($options['env-file'] ?? '')),
+			$deployVersion,
+			$deployDate,
+		);
 
 		prepareSdk(
 			$projectRoot,
@@ -65,8 +79,8 @@ switch ($command)
 
 		buildPackage(
 			$projectRoot,
-			$metadata['version'],
-			$metadata['date'],
+			$deployVersion,
+			$deployDate,
 			resolvePath($projectRoot, $options['stage-dir'] ?? DEFAULT_STAGE_DIR),
 			resolvePath($projectRoot, $options['output-dir'] ?? DEFAULT_OUTPUT_DIR),
 		);
@@ -162,16 +176,20 @@ function resolvePackageMetadata(string $lockFile, string $packageName): array
 	];
 }
 
-function appendMetadataEnvFile(array $metadata, string $envFile): void
+function appendMetadataEnvFile(array $metadata, string $envFile, ?string $deployVersion = null, ?string $deployDate = null): void
 {
 	if ($envFile === '')
 	{
 		return;
 	}
 
+	$resolvedDeployVersion = resolveDeployVersion((string) $deployVersion, $metadata['version']);
+	$resolvedDeployDate = resolveDeployDate((string) $deployDate, $metadata['date'], false);
 	$lines = [
 		'SDK_BUILD_VERSION=' . $metadata['version'],
 		'SDK_BUILD_DATE=' . $metadata['date'],
+		'PACKAGE_BUILD_VERSION=' . $resolvedDeployVersion,
+		'PACKAGE_BUILD_DATE=' . $resolvedDeployDate,
 	];
 
 	if (file_put_contents($envFile, implode(PHP_EOL, $lines) . PHP_EOL, FILE_APPEND | LOCK_EX) === false)
@@ -241,6 +259,35 @@ function buildPackage(
 	createZipArchive($stageDir, $archiveFile);
 
 	fwrite(STDOUT, sprintf("Package created: %s\n", $archiveFile));
+}
+
+function resolveDeployVersion(string $overrideVersion, string $fallbackVersion): string
+{
+	$normalizedOverride = ltrim(trim($overrideVersion), 'v');
+
+	if ($normalizedOverride !== '')
+	{
+		return $normalizedOverride;
+	}
+
+	return ltrim(trim($fallbackVersion), 'v');
+}
+
+function resolveDeployDate(string $overrideDate, string $fallbackDate, bool $useCurrentDateForOverride): string
+{
+	$normalizedOverride = trim($overrideDate);
+
+	if ($normalizedOverride !== '')
+	{
+		return $normalizedOverride;
+	}
+
+	if ($useCurrentDateForOverride)
+	{
+		return date(DEFAULT_BUILD_DATE_FORMAT);
+	}
+
+	return trim($fallbackDate);
 }
 
 function parseArguments(array $arguments): array
@@ -505,7 +552,7 @@ Usage:
   php build/release.php prepare-sdk [--source-dir=...]
   php build/release.php resolve-metadata [--lock-file=...] [--package=webtolk/max] [--env-file=...]
   php build/release.php package [--version=...] [--date=...] [--stage-dir=...] [--output-dir=...]
-  php build/release.php package-from-lock [--lock-file=...] [--package=webtolk/max] [--env-file=...] [--source-dir=...] [--stage-dir=...] [--output-dir=...]
+  php build/release.php package-from-lock [--lock-file=...] [--package=webtolk/max] [--env-file=...] [--version=...] [--date=...] [--source-dir=...] [--stage-dir=...] [--output-dir=...]
 TEXT;
 
 	fwrite(STDERR, $message . PHP_EOL);
