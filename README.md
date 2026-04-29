@@ -10,26 +10,33 @@ Joomla-пакет, который ставит:
 Основной репозиторий SDK:
 - https://github.com/WebTolk/Max-platform-PHP-SDK
 
+## Системные требования
+
+- Joomla `5.0+`
+- PHP `8.1+`
+
+## Установка
+
+1. Скачайте актуальный пакет из релизов репозитория на GitHub.
+2. Установите его через стандартный установщик расширений Joomla.
+3. После установки в системе появятся:
+   - библиотека `Webtolk/Wtmax`
+   - системный плагин `System - WT Max`
+4. Включите плагин `System - WT Max`.
+
 ## Что входит в пакет
 
-- Joomla library `Webtolk/Wtmax`
-- системный плагин для хранения токена
-- поле `plugininfo`
-- поле статуса подключения к API
-- поле выбора доступного чата MAX через Joomla 5 `ModalSelect` в `src/Field`
-- опция логирования в отдельный файл
+- Joomla library `Webtolk/Wtmax` с коллекцией Joomla Form полей.
+- системный плагин для хранения токена и отображением статуса подключения к API, опцией логирования в отдельный файл
 
-## Как это работает
+## Первичная настройка
 
 После установки:
 
 1. включите плагин `System - WT Max`
-2. укажите `MAX bot token`
-3. при необходимости выберите чат MAX по умолчанию
-4. при необходимости включите логирование в отдельный файл
-5. в коде Joomla получайте готовый SDK через `Wtmax::getInstance()`
-
-Минимальная версия Joomla для текущего пакета: `5.0+`.
+2. укажите параметр `Токен бота MAX`
+3. при необходимости включите параметр `Логировать в отдельный файл`
+4. в коде Joomla получайте готовый SDK через `Wtmax::getInstance()`
 
 Библиотека внутри создаёт:
 
@@ -127,6 +134,8 @@ echo $message->getBody()?->getMessageId() ?? '';
 
 Пример основан на upstream сценарии `messages()->answerCallback()`.
 
+Важно: это только пример работы с данными MAX API на стороне вашего расширения. Пакет не создаёт готовую точку входа Joomla для входящих callback- или webhook-запросов. Такой маршрут, контроллер или плагин разработчик должен реализовать сам.
+
 ```php
 <?php
 
@@ -194,59 +203,41 @@ $max->setTransport(
 
 Основные параметры:
 
-- `MAX bot token`
-- `Log to a separate file`
-- `Custom log file`
+- `Токен бота MAX`
+- `Логировать в отдельный файл`
+- `Имя лог-файла`
+
+## Поля Joomla Form
+
+Поля библиотеки, их назначение и примеры подключения в XML вынесены в отдельный файл:
+
+- [JOOMLA-FORM-FIELDS.md](./JOOMLA-FORM-FIELDS.md)
+
+Коротко:
+
+- поля библиотеки подключаются через `Webtolk\Wtmax\Field`
+- сейчас доступны `connectionstatus` и `chatmodalselect`
+- `chatmodalselect` требует Joomla `5.0+` и использует точку AJAX системного плагина `System - WT Max`
 
 ## Логирование
 
-Если включён переключатель логирования, библиотека пишет в отдельный файл:
+Если включён переключатель логирования, библиотека пишет в отдельный файл в каталоге логов Joomla:
 
 ```text
-/logs/wtmax.max-api.log
+/logs/wtmax.log
 ```
+
+Поле `Log file name` задаёт только имя файла без пути. Если поле оставить пустым, используется `wtmax.log`.
+
+## Ограничения
+
+- Пакет не создаёт готовую точку входа Joomla для входящих webhook- и callback-запросов MAX.
+- Поле `chatmodalselect` работает только на Joomla `5.0+`.
+- Поле выбора чата зависит от системного плагина `System - WT Max`, потому что список чатов запрашивается через его AJAX-точку.
+- В текущем пакете реализован выбор `chat_id`; отдельный универсальный выбор `user_id` не входит в поставку.
 
 ## Сборка
 
-Правила сборки разделены:
+Сборка пакета выполняется на GitHub.
 
-- публичный entrypoint сборки один: `build/release.php`
-- и локально, и в GitHub CI SDK подтягивается через Composer и подготавливается в `lib_webtolk_wtmax/src/libraries/vendor`
-
-Важно:
-
-- `lib_webtolk_wtmax/src` хранит bootstrap-класс `Wtmax` и вложенный upstream SDK
-- в package tree попадает только папка `src` из `webtolk/max`, и она размещается в `lib_webtolk_wtmax/src/libraries/vendor/max/src`
-
-### Локальная сборка
-
-```bash
-  composer update webtolk/max
-  php build/release.php package-from-lock --package=webtolk/max
-  php build/release.php package-from-lock --package=webtolk/max --version=0.1.0.1
-```
-
-### GitHub CI
-
-Для GitHub используется workflow:
-
-- [.github/workflows/release.yml](./.github/workflows/release.yml)
-
-Он:
-
-1. обновляет `webtolk/max` через Composer из `https://github.com/WebTolk/Max-platform-PHP-SDK`
-   Всегда берётся актуальная версия из апстрима по Composer-constraint проекта.
-2. копирует только `src` в `lib_webtolk_wtmax/src/libraries/vendor/max/src`
-3. берёт версию и дату из установленного `webtolk/max`
-4. по умолчанию подставляет их в плейсхолдеры проекта при сборке ZIP
-5. при ручном запуске `workflow_dispatch` можно указать `package_version`, чтобы переопределить только версию Joomla-пакета, например `0.1.0.1`
-6. при таком override SDK всё равно берётся по обычной Composer-логике из апстрима, а меняются только deploy-версия пакета, имя ZIP и release tag
-7. если `package_version` не указан, версия релиза и имя ZIP по-прежнему определяются по апстриму
-
-## Связанные файлы проекта
-
-- [lib_webtolk_wtmax/Max.xml](./lib_webtolk_wtmax/Max.xml)
-- [plg_system_wtmax/wtmax.xml](./plg_system_wtmax/wtmax.xml)
-- [lib_webtolk_wtmax/src/Wtmax.php](./lib_webtolk_wtmax/src/Wtmax.php)
-- [build/release.php](./build/release.php)
-- [.github/workflows/release.yml](./.github/workflows/release.yml)
+Во время сборки из апстримного репозитория `webtolk/max` автоматически подтягивается актуальная версия SDK, после чего на её основе собирается Joomla-пакет.
