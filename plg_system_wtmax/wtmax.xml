@@ -13,6 +13,7 @@
 	<files>
 		<filename plugin="wtmax">wtmax.xml</filename>
 		<folder>services</folder>
+		<folder>sql</folder>
 		<folder>src</folder>
 	</files>
 	<languages folder="language" client="administrator">
@@ -21,6 +22,21 @@
 		<language tag="ru-RU">ru-RU/plg_system_wtmax.ini</language>
 		<language tag="ru-RU">ru-RU/plg_system_wtmax.sys.ini</language>
 	</languages>
+	<install>
+		<sql>
+			<file driver="mysql" charset="utf8mb4">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>
+	<uninstall>
+		<sql>
+			<file driver="mysql" charset="utf8mb4">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>
+	<update>
+		<schemas>
+			<schemapath type="mysql">sql/updates/mysql</schemapath>
+		</schemas>
+	</update>
 	<config>
 		<fields name="params">
 			<fieldset name="basic">
@@ -49,6 +65,24 @@
 					description="PLG_WTMAX_LOG_FILE_DESC"
 					filter="raw"
 					showon="log_separate_file:1"/>
+				<field addfieldprefix="Webtolk\Wtmax\Field"
+					type="chatmodalselect"
+					name="default_chat_id"
+					label="PLG_WTMAX_DEFAULT_CHAT_ID"
+					description="PLG_WTMAX_DEFAULT_CHAT_ID_DESC"
+					filter="raw"/>
+				<field addfieldprefix="Webtolk\Wtmax\Field"
+					type="chatinfo"
+					name="default_chat_info"
+					chat_field="default_chat_id"/>
+				<field type="note"
+					name="outbound_code_example"
+					label="PLG_WTMAX_OUTBOUND_CODE_EXAMPLE_LABEL"
+					description="PLG_WTMAX_OUTBOUND_CODE_EXAMPLE"/>
+				<field type="note"
+					name="outbound_code_description"
+					label="PLG_WTMAX_OUTBOUND_CODE_DESC_LABEL"
+					description="PLG_WTMAX_OUTBOUND_CODE_DESC"/>
 			</fieldset>
 			<fieldset name="webhook" label="PLG_WTMAX_FIELDSET_WEBHOOK">
 				<field type="radio"

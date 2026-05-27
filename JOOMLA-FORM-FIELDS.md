@@ -10,6 +10,7 @@ Webtolk\Wtmax\Field
 
 - `connectionstatus` — проверяет подключение к MAX API по текущим параметрам и показывает карточку со статусом бота
 - `chatmodalselect` — Joomla 5+ `ModalSelect` для выбора доступного MAX-чата
+- `chatinfo` — показывает информацию о выбранном MAX-чате из другого поля формы
 - `webhooksecret` — генерирует и показывает секрет webhook-подписки
 - `webhookurl` — показывает URL входящего webhook endpoint-а с уже добавленным секретом
 - `webhookactions` — показывает кнопки создания и удаления MAX webhook-подписки через системный плагин
@@ -64,6 +65,28 @@ Webtolk\Wtmax\Field
 ```
 
 После выбора поле сохраняет `chat_id`, а отображаемое название чата восстанавливает через MAX API при повторном открытии формы.
+
+## Пример: chatinfo
+
+Поле `chatinfo` не хранит значение само. Оно читает `chat_id` из другого параметра Joomla Form, имя которого указывается в XML-атрибуте `chat_field`.
+
+```xml
+<field
+	addfieldprefix="Webtolk\Wtmax\Field"
+	type="chatmodalselect"
+	name="default_chat_id"
+	label="MAX chat_id по умолчанию"
+/>
+
+<field
+	addfieldprefix="Webtolk\Wtmax\Field"
+	type="chatinfo"
+	name="default_chat_info"
+	chat_field="default_chat_id"
+/>
+```
+
+В этом примере `chatinfo` берёт значение из параметра `default_chat_id`, запрашивает карточку чата через MAX API и показывает title, `chat_id`, тип, статус, количество участников и ссылку, если она есть.
 
 ## Пример: webhook-поля
 

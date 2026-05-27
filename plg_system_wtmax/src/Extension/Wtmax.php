@@ -15,6 +15,7 @@ namespace Joomla\Plugin\System\Wtmax\Extension;
 
 defined('_JEXEC') or die;
 
+use finfo;
 use InvalidArgumentException;
 use JsonException;
 use Joomla\CMS\Event\Plugin\AjaxEvent;
@@ -25,22 +26,36 @@ use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
-use RuntimeException;
+use Joomla\Database\DatabaseAwareTrait;
+use Joomla\Database\ParameterType;
+use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
+use RuntimeException;
+use Throwable;
 use Webtolk\Max\Entity\Chat;
+use Webtolk\Max\Entity\Message;
 use Webtolk\Max\Entity\Update;
+use Webtolk\Max\Max;
+use Webtolk\Max\Payload\Attachment\AttachmentPayloadInterface;
+use Webtolk\Max\Payload\Attachment\Button\LinkButton;
+use Webtolk\Max\Payload\Attachment\InlineKeyboardAttachment;
 use Webtolk\Max\Payload\CreateSubscriptionPayload;
+use Webtolk\Max\Payload\NewMessageBody;
+use Webtolk\Max\Payload\UploadType;
 use Webtolk\Wtmax\Event\WebhookEvent;
 use Webtolk\Wtmax\Wtmax as WtmaxFacade;
 
 final class Wtmax extends CMSPlugin implements SubscriberInterface
 {
+	use DatabaseAwareTrait;
+
 	protected $autoloadLanguage = true;
 
 	public static function getSubscribedEvents(): array
 	{
 		return [
 			'onAjaxWtmax' => 'onAjaxWtmax',
+			'onWtmaxSendMessage' => 'onWtmaxSendMessage',
 		];
 	}
 
@@ -90,6 +105,52 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 
 			default:
 				throw new InvalidArgumentException(Text::sprintf('PLG_WTMAX_AJAX_ERROR_UNSUPPORTED_ACTION', $action), 400);
+		}
+	}
+
+	public function onWtmaxSendMessage(Event $event): void
+	{
+		$this->loadLanguage();
+		$this->getApplication()?->getLanguage()->load('plg_system_wtmax', JPATH_ADMINISTRATOR)
+			|| $this->getApplication()?->getLanguage()->load('plg_system_wtmax', JPATH_SITE);
+
+		try
+		{
+			$messageParams = $this->normalizeParams($event->getArgument('params', []));
+			$messageText = (string) ($event->getArgument('message', '') ?? '');
+			$attachments = $this->normalizeAttachments($event->getArgument('attachments', []));
+			$link = $event->getArgument('link', null);
+			$link = is_string($link) ? $link : null;
+			$chatId = $this->resolveOutboundChatId($messageParams);
+
+			if ($chatId === null)
+			{
+				throw new RuntimeException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_CHAT_REQUIRED'));
+			}
+
+			$max = WtmaxFacade::getInstance($this->params);
+			$body = $this->buildOutboundMessageBody($max, $messageText, $attachments, $link, $messageParams);
+			$sentMessage = $max->messages()->sendToChat($chatId, $body, $this->shouldDisableLinkPreview($messageParams));
+
+			$this->saveOutboundMessage($sentMessage, $messageParams, count($sentMessage->getAttachments()));
+
+			$event->setArgument(
+				'result',
+				[
+					'success' => true,
+					'message' => $sentMessage->toArray(),
+				]
+			);
+		}
+		catch (Throwable $e)
+		{
+			$event->setArgument(
+				'result',
+				[
+					'success' => false,
+					'error' => $e->getMessage(),
+				]
+			);
 		}
 	}
 
@@ -326,6 +387,365 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 		$dispatcher->dispatch($webhookEvent->getName(), $webhookEvent);
 
 		return 'success';
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function normalizeParams(mixed $params): array
+	{
+		return is_array($params) ? $params : [];
+	}
+
+	/**
+	 * @param array<string, mixed> $messageParams
+	 */
+	private function resolveOutboundChatId(array $messageParams): ?int
+	{
+		$chatId = $this->normalizeInteger($messageParams['chat_id'] ?? null);
+
+		if ($chatId !== null)
+		{
+			return $chatId;
+		}
+
+		return $this->normalizeInteger($this->params->get('default_chat_id'));
+	}
+
+	/**
+	 * @return list<mixed>
+	 */
+	private function normalizeAttachments(mixed $attachments): array
+	{
+		if ($attachments === null || $attachments === '')
+		{
+			return [];
+		}
+
+		if (!is_array($attachments))
+		{
+			throw new InvalidArgumentException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENTS_INVALID'));
+		}
+
+		return array_values($attachments);
+	}
+
+	/**
+	 * @param list<mixed>          $attachments
+	 * @param array<string, mixed> $messageParams
+	 */
+	private function buildOutboundMessageBody(
+		Max $max,
+		string $messageText,
+		array $attachments,
+		?string $link,
+		array $messageParams
+	): NewMessageBody {
+		$text = $this->normalizeOutboundText($messageText);
+		$payloadAttachments = [];
+
+		foreach ($attachments as $attachment)
+		{
+			$payloadAttachments[] = $this->buildOutboundAttachment($max, $attachment);
+		}
+
+		$linkData = $this->extractLinkData($link);
+
+		if ($linkData !== null)
+		{
+			$payloadAttachments[] = InlineKeyboardAttachment::rows(
+				[
+					LinkButton::create($linkData['text'], $linkData['url']),
+				]
+			);
+		}
+		elseif ($link !== null && trim($link) !== '')
+		{
+			$text = trim($text . PHP_EOL . $this->normalizeOutboundText($link));
+		}
+
+		if ($text === '' && $payloadAttachments === [])
+		{
+			throw new InvalidArgumentException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_EMPTY_MESSAGE'));
+		}
+
+		$body = new NewMessageBody();
+
+		if ($text !== '')
+		{
+			$body = $body->withText($text);
+		}
+
+		if ($payloadAttachments !== [])
+		{
+			$body = $body->withAttachments($payloadAttachments);
+		}
+
+		if (array_key_exists('notify', $messageParams))
+		{
+			$body = $body->withNotify((bool) $messageParams['notify']);
+		}
+
+		return $body;
+	}
+
+	private function buildOutboundAttachment(Max $max, mixed $attachment): AttachmentPayloadInterface
+	{
+		if ($attachment instanceof AttachmentPayloadInterface)
+		{
+			return $attachment;
+		}
+
+		if (is_string($attachment))
+		{
+			$attachment = [
+				'path' => $attachment,
+			];
+		}
+
+		if (!is_array($attachment))
+		{
+			throw new InvalidArgumentException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENT_INVALID'));
+		}
+
+		$type = strtolower(trim((string) ($attachment['type'] ?? '')));
+
+		if ($type === 'link')
+		{
+			return $this->buildLinkAttachment($attachment);
+		}
+
+		$path = $attachment['path'] ?? $attachment['file'] ?? $attachment['src'] ?? null;
+
+		if (!is_string($path) || trim($path) === '')
+		{
+			throw new InvalidArgumentException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENT_PATH_REQUIRED'));
+		}
+
+		$absolutePath = $this->resolveAttachmentPath($path);
+		$mimeType = $this->detectAttachmentMimeType($absolutePath);
+		$uploadType = $this->resolveAttachmentUploadType($type, $mimeType);
+		$contents = file_get_contents($absolutePath);
+
+		if ($contents === false)
+		{
+			throw new RuntimeException(Text::sprintf('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENT_READ', $path));
+		}
+
+		return $max->uploads()
+			->upload($uploadType, $contents, $mimeType)
+			->toAttachment();
+	}
+
+	/**
+	 * @param array<string, mixed> $attachment
+	 */
+	private function buildLinkAttachment(array $attachment): AttachmentPayloadInterface
+	{
+		$url = trim((string) ($attachment['url'] ?? $attachment['href'] ?? ''));
+
+		if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false)
+		{
+			throw new InvalidArgumentException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_LINK_URL_INVALID'));
+		}
+
+		$text = trim((string) ($attachment['text'] ?? $attachment['title'] ?? ''));
+
+		return InlineKeyboardAttachment::rows(
+			[
+				LinkButton::create($text !== '' ? $text : Text::_('PLG_WTMAX_OUTBOUND_LINK_DEFAULT_TEXT'), $url),
+			]
+		);
+	}
+
+	private function resolveAttachmentPath(string $path): string
+	{
+		if (preg_match('#^[a-z][a-z0-9+.-]*://#i', $path) === 1)
+		{
+			throw new InvalidArgumentException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENT_REMOTE_URL'));
+		}
+
+		$normalized = str_replace('\\', '/', trim($path));
+		$root = realpath(JPATH_ROOT);
+		$rootNormalized = $root !== false ? rtrim(str_replace('\\', '/', $root), '/') . '/' : '';
+		$isWindowsAbsolute = preg_match('/^[A-Za-z]:\//', $normalized) === 1;
+		$isAbsoluteInsideRoot = $rootNormalized !== '' && str_starts_with($normalized . '/', $rootNormalized);
+		$candidate = $isWindowsAbsolute || $isAbsoluteInsideRoot
+			? $normalized
+			: JPATH_ROOT . '/' . ltrim($normalized, '/');
+
+		$realPath = realpath($candidate);
+
+		if ($realPath === false || !is_file($realPath))
+		{
+			throw new InvalidArgumentException(Text::sprintf('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENT_NOT_FOUND', $path));
+		}
+
+		if ($root !== false)
+		{
+			$realNormalized = str_replace('\\', '/', $realPath);
+
+			if (!str_starts_with($realNormalized . '/', $rootNormalized))
+			{
+				throw new InvalidArgumentException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENT_OUTSIDE_ROOT'));
+			}
+		}
+
+		return $realPath;
+	}
+
+	private function detectAttachmentMimeType(string $path): string
+	{
+		$finfo = new finfo(FILEINFO_MIME_TYPE);
+		$mimeType = $finfo->file($path);
+
+		return is_string($mimeType) && $mimeType !== '' ? $mimeType : 'application/octet-stream';
+	}
+
+	private function resolveAttachmentUploadType(string $type, string $mimeType): UploadType
+	{
+		if ($type === '')
+		{
+			return match (true)
+			{
+				str_starts_with($mimeType, 'image/') => UploadType::IMAGE,
+				str_starts_with($mimeType, 'video/') => UploadType::VIDEO,
+				str_starts_with($mimeType, 'audio/') => UploadType::AUDIO,
+				default => UploadType::FILE,
+			};
+		}
+
+		$uploadType = match ($type)
+		{
+			'image' => UploadType::IMAGE,
+			'video' => UploadType::VIDEO,
+			'audio' => UploadType::AUDIO,
+			'file' => UploadType::FILE,
+			default => throw new InvalidArgumentException(Text::sprintf('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENT_TYPE_INVALID', $type)),
+		};
+
+		if ($uploadType !== UploadType::FILE && !str_starts_with($mimeType, $uploadType->value . '/'))
+		{
+			throw new InvalidArgumentException(Text::sprintf('PLG_WTMAX_OUTBOUND_ERROR_ATTACHMENT_MIME_MISMATCH', $type, $mimeType));
+		}
+
+		return $uploadType;
+	}
+
+	private function normalizeOutboundText(string $text): string
+	{
+		$normalized = preg_replace('/<br\s*\/?>/i', PHP_EOL, $text) ?? $text;
+		$normalized = preg_replace('/<\/p>/i', PHP_EOL . PHP_EOL, $normalized) ?? $normalized;
+		$normalized = html_entity_decode(strip_tags($normalized), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+		return trim($normalized);
+	}
+
+	/**
+	 * @return array{text: string, url: string}|null
+	 */
+	private function extractLinkData(?string $link): ?array
+	{
+		if ($link === null || trim($link) === '')
+		{
+			return null;
+		}
+
+		if (preg_match('/<a\s[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is', $link, $matches) === 1)
+		{
+			$url = trim($matches[1]);
+			$text = trim($this->normalizeOutboundText($matches[2]));
+
+			if (filter_var($url, FILTER_VALIDATE_URL))
+			{
+				return [
+					'text' => $text !== '' ? $text : Text::_('PLG_WTMAX_OUTBOUND_LINK_DEFAULT_TEXT'),
+					'url' => $url,
+				];
+			}
+		}
+
+		$plainLink = trim(strip_tags($link));
+
+		if (filter_var($plainLink, FILTER_VALIDATE_URL))
+		{
+			return [
+				'text' => Text::_('PLG_WTMAX_OUTBOUND_LINK_DEFAULT_TEXT'),
+				'url' => $plainLink,
+			];
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param array<string, mixed> $messageParams
+	 */
+	private function shouldDisableLinkPreview(array $messageParams): ?bool
+	{
+		if (array_key_exists('disable_link_preview', $messageParams))
+		{
+			return (bool) $messageParams['disable_link_preview'];
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param array<string, mixed> $messageParams
+	 */
+	private function saveOutboundMessage(Message $message, array $messageParams, int $attachmentCount): void
+	{
+		$messageId = $message->getBody()?->getMessageId();
+
+		if ($messageId === null || $messageId === '')
+		{
+			return;
+		}
+
+		$chatId = $message->getRecipient()?->getChatId();
+		$context = isset($messageParams['context']) && $messageParams['context'] !== ''
+			? (string) $messageParams['context']
+			: null;
+		$itemId = $this->normalizeInteger($messageParams['item_id'] ?? null);
+		$timestamp = $message->getTimestamp() ?? (int) floor(microtime(true) * 1000);
+		$db = $this->getDatabase();
+		$query = $db->getQuery(true);
+
+		$query->insert($db->quoteName('#__plg_system_wtmax_messages'))
+			->columns(
+				$db->quoteName(
+					[
+						'message_id',
+						'chat_id',
+						'context',
+						'item_id',
+						'attachment_count',
+						'date',
+					]
+				)
+			)
+			->values(':message_id, :chat_id, :context, :item_id, :attachment_count, :date');
+
+		$query->bind(':message_id', $messageId, ParameterType::STRING)
+			->bind(':chat_id', $chatId, $chatId !== null ? ParameterType::INTEGER : ParameterType::NULL)
+			->bind(':context', $context, $context !== null ? ParameterType::STRING : ParameterType::NULL)
+			->bind(':item_id', $itemId, $itemId !== null ? ParameterType::INTEGER : ParameterType::NULL)
+			->bind(':attachment_count', $attachmentCount, ParameterType::INTEGER)
+			->bind(':date', $timestamp, ParameterType::INTEGER);
+
+		$db->setQuery($query);
+		$db->execute();
+	}
+
+	private function normalizeInteger(mixed $value): ?int
+	{
+		if ($value === null || $value === '')
+		{
+			return null;
+		}
+
+		return is_numeric($value) ? (int) $value : null;
 	}
 
 	private function buildWebhookUrl(bool $includeSecret): string

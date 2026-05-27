@@ -206,7 +206,40 @@ $max->setTransport(
 - `Токен бота MAX`
 - `Логировать в отдельный файл`
 - `Имя лог-файла`
+- `MAX chat_id по умолчанию` для исходящих сообщений
 - параметры webhook-подписки: включение вебхуков, секрет, URL, типы обновлений, allow-list `chat_id`
+
+## Исходящие сообщения
+
+Системный плагин `System - WT Max` может выступать общей точкой отправки сообщений из других Joomla-расширений. Расширение вызывает событие `onWtmaxSendMessage`, а плагин отправляет сообщение через сохранённый токен WT Max.
+
+```php
+<?php
+
+$event = \Joomla\CMS\Event\AbstractEvent::create('onWtmaxSendMessage', [
+	'subject' => $this,
+	'message' => $message,
+	'attachments' => [
+		['type' => 'image', 'path' => '/images/example.jpg'],
+		['type' => 'link', 'url' => 'https://example.com', 'text' => 'Открыть'],
+	],
+	'params' => [
+		'context' => 'com_content.article',
+		'item_id' => 10,
+		'chat_id' => 123456,
+		'notify' => true,
+		'disable_link_preview' => false,
+	],
+]);
+
+$this->getApplication()->getDispatcher()->dispatch($event->getName(), $event);
+
+$result = $event->getArgument('result', []);
+```
+
+Если `params['chat_id']` не передан, используется `MAX chat_id по умолчанию` из настроек плагина. Файловые вложения принимаются только как локальные пути внутри корня сайта Joomla. Поддерживаемые типы: `image`, `video`, `audio`, `file`, `link`; если тип файлового вложения не передан, он определяется по MIME-типу.
+
+Успешные отправки сохраняются в таблицу `#__plg_system_wtmax_messages` с `message_id`, `chat_id`, `context`, `item_id`, количеством вложений и timestamp.
 
 ## Webhooks
 
@@ -234,7 +267,7 @@ $max->setTransport(
 Коротко:
 
 - поля библиотеки подключаются через `Webtolk\Wtmax\Field`
-- сейчас доступны `connectionstatus`, `chatmodalselect`, `webhooksecret`, `webhookurl`, `webhookactions`, `subscriptionslist`
+- сейчас доступны `connectionstatus`, `chatmodalselect`, `chatinfo`, `webhooksecret`, `webhookurl`, `webhookactions`, `subscriptionslist`
 - `chatmodalselect` требует Joomla `5.0+` и использует точку AJAX системного плагина `System - WT Max`
 
 ## Логирование
