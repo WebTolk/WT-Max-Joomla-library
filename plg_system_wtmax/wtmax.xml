@@ -50,6 +50,57 @@
 					filter="raw"
 					showon="log_separate_file:1"/>
 			</fieldset>
+			<fieldset name="webhook" label="PLG_WTMAX_FIELDSET_WEBHOOK">
+				<field type="radio"
+					name="allow_webhooks"
+					label="PLG_WTMAX_ALLOW_WEBHOOKS"
+					description="PLG_WTMAX_ALLOW_WEBHOOKS_DESC"
+					layout="joomla.form.field.radio.switcher"
+					default="0">
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field addfieldprefix="Webtolk\Wtmax\Field"
+					type="webhooksecret"
+					name="webhook_secret"
+					label="PLG_WTMAX_WEBHOOK_SECRET"
+					description="PLG_WTMAX_WEBHOOK_SECRET_DESC"
+					filter="raw"
+					showon="allow_webhooks:1"/>
+				<field addfieldprefix="Webtolk\Wtmax\Field"
+					type="webhookurl"
+					name="webhook_url"
+					label="PLG_WTMAX_WEBHOOK_URL"
+					description="PLG_WTMAX_WEBHOOK_URL_DESC"
+					readonly="true"
+					showon="allow_webhooks:1"/>
+				<field type="textarea"
+					name="allowed_chat_ids"
+					label="PLG_WTMAX_ALLOWED_CHAT_IDS"
+					description="PLG_WTMAX_ALLOWED_CHAT_IDS_DESC"
+					rows="5"
+					filter="raw"
+					showon="allow_webhooks:1"/>
+				<field type="list"
+					name="webhook_update_types"
+					label="PLG_WTMAX_WEBHOOK_UPDATE_TYPES"
+					description="PLG_WTMAX_WEBHOOK_UPDATE_TYPES_DESC"
+					multiple="true"
+					filter="array"
+					showon="allow_webhooks:1">
+					<option value="message_created">PLG_WTMAX_WEBHOOK_UPDATE_TYPE_MESSAGE_CREATED</option>
+					<option value="message_callback">PLG_WTMAX_WEBHOOK_UPDATE_TYPE_MESSAGE_CALLBACK</option>
+				</field>
+				<field addfieldprefix="Webtolk\Wtmax\Field"
+					type="webhookactions"
+					name="webhook_actions"
+					label="PLG_WTMAX_WEBHOOK_ACTIONS"
+					showon="allow_webhooks:1"/>
+				<field addfieldprefix="Webtolk\Wtmax\Field"
+					type="subscriptionslist"
+					name="webhooks_list"
+					showon="allow_webhooks:1"/>
+			</fieldset>
 		</fields>
 	</config>
 </extension>
