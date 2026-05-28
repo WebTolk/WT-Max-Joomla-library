@@ -1,53 +1,49 @@
 # WT Max Joomla Library
 
-Joomla-пакет, который ставит:
+Joomla-пакет для подключения MAX Bot API к Joomla-расширениям.
 
-- библиотеку `WebTolk/Wtmax`
-- системный плагин `System - WT Max`
+Пакет устанавливает:
 
-Пакет оборачивает основной SDK `webtolk/max` и даёт готовую точку входа `\Webtolk\Wtmax\Wtmax::getInstance()`. Токен бота и служебные настройки хранятся в системном плагине.
+- библиотеку `WebTolk/Wtmax`;
+- системный плагин `System - WT Max`;
+- набор reusable Joomla Form полей для MAX;
+- входящую webhook-точку через `com_ajax`;
+- событие для исходящей отправки сообщений из других Joomla-расширений.
 
-Основной репозиторий SDK:
+Внутри используется Composer SDK `webtolk/max`:
+
 - https://github.com/WebTolk/Max-platform-PHP-SDK
 
-## Системные требования
+## Требования
 
 - Joomla `5.0+`
 - PHP `8.1+`
+- MAX bot token
 
 ## Установка
 
-1. Скачайте актуальный пакет из релизов репозитория на GitHub.
-2. Установите его через стандартный установщик расширений Joomla.
-3. После установки в системе появятся:
-   - библиотека `Webtolk/Wtmax`
-   - системный плагин `System - WT Max`
-4. Включите плагин `System - WT Max`.
+1. Скачайте ZIP-пакет из GitHub Releases этого репозитория.
+2. Установите ZIP через стандартный установщик Joomla.
+3. Включите плагин `System - WT Max`.
+4. Откройте настройки плагина и укажите `Токен бота MAX`.
 
-## Что входит в пакет
+После сохранения настроек поле статуса подключения покажет информацию о боте или ошибку соединения.
 
-- Joomla library `Webtolk/Wtmax` с коллекцией Joomla Form полей.
-- системный плагин для хранения токена и отображением статуса подключения к API, опцией логирования в отдельный файл
+## Основные возможности
 
-## Первичная настройка
+- единая точка получения MAX SDK из Joomla: `Webtolk\Wtmax\Wtmax::getInstance()`;
+- хранение bot token и настроек в системном плагине;
+- выбор MAX-чата в админке через ModalSelect;
+- настройка default `chat_id` для исходящих сообщений;
+- событие `onWtmaxSendMessage` для отправки сообщений из других расширений;
+- отправка текста, файловых вложений и link-кнопок;
+- журнал успешных исходящих отправок в таблице `#__plg_system_wtmax_messages`;
+- входящие webhooks MAX через `com_ajax`;
+- событие `onWtmaxIncomingWebhook` для обработчиков входящих webhook payload;
+- создание, просмотр и удаление MAX webhook-подписок из настроек плагина;
+- отдельный лог-файл SDK при включённом логировании.
 
-После установки:
-
-1. включите плагин `System - WT Max`
-2. укажите параметр `Токен бота MAX`
-3. при необходимости включите параметр `Логировать в отдельный файл`
-4. в коде Joomla получайте готовый SDK через `Wtmax::getInstance()`
-
-Библиотека внутри создаёт:
-
-- `Joomla\Http\HttpFactory`
-- `Laminas\Diactoros\RequestFactory`
-- `Laminas\Diactoros\StreamFactory`
-- PSR-3 логгер из ядра Joomla
-
-## Быстрый старт
-
-### Получить готовый экземпляр SDK
+## Быстрый старт SDK
 
 ```php
 <?php
@@ -59,16 +55,15 @@ use Webtolk\Wtmax\Wtmax;
 defined('_JEXEC') or die;
 
 $max = Wtmax::getInstance();
-
 $bot = $max->bots()->me();
 
 echo $bot->getId();
 echo $bot->getUsername();
 ```
 
-### Отправить сообщение в чат
+`Wtmax::getInstance()` берёт bot token из настроек `System - WT Max` и создаёт SDK с Joomla HTTP transport и Joomla logger.
 
-Пример основан на сценарии `messages()->sendToChat()` из основного SDK.
+## Отправка сообщения напрямую через SDK
 
 ```php
 <?php
@@ -84,149 +79,42 @@ $chatId = 123456;
 
 $message = Wtmax::getInstance()->messages()->sendToChat(
 	$chatId,
-	NewMessageBody::text('Привет из Joomla WT Max library')
-);
-
-echo $message->getBody()?->getText() ?? '';
-```
-
-### Отправить картинку
-
-Пример основан на upstream upload flow: `uploads()->upload()` + `toAttachment()` + `messages()->sendToChat()`.
-
-```php
-<?php
-
-declare(strict_types=1);
-
-use Webtolk\Max\Payload\NewMessageBody;
-use Webtolk\Max\Payload\UploadType;
-use Webtolk\Wtmax\Wtmax;
-use RuntimeException;
-
-defined('_JEXEC') or die;
-
-$chatId = 123456;
-$imagePath = JPATH_ROOT . '/images/sample.jpg';
-$binaryImage = file_get_contents($imagePath);
-
-if ($binaryImage === false)
-{
-	throw new RuntimeException('Image file was not read: ' . $imagePath);
-}
-
-$max = Wtmax::getInstance();
-
-$imageAttachment = $max->uploads()
-	->upload(UploadType::IMAGE, $binaryImage, 'image/jpeg')
-	->toAttachment();
-
-$message = $max->messages()->sendToChat(
-	$chatId,
-	NewMessageBody::text('Отправляю картинку из Joomla')
-		->withAttachments([$imageAttachment])
+	NewMessageBody::text('Привет из Joomla')
 );
 
 echo $message->getBody()?->getMessageId() ?? '';
 ```
 
-### Обработать callback и ответить на него
+## Отправка сообщения из другого Joomla-расширения
 
-Пример основан на upstream сценарии `messages()->answerCallback()`.
-
-Пакет создаёт защищённую Joomla-точку входа для входящих webhook-запросов MAX и прокидывает принятый payload в событие `onWtmaxIncomingWebhook`. Ответ на callback остаётся задачей вашего обработчика события или другого прикладного кода.
+Для интеграций удобнее не создавать SDK вручную, а отправлять событие `onWtmaxSendMessage`. Системный плагин сам возьмёт token, default chat, загрузит вложения и отправит сообщение.
 
 ```php
 <?php
 
 declare(strict_types=1);
 
-use Webtolk\Max\Payload\CallbackAnswerPayload;
-use Webtolk\Wtmax\Wtmax;
+use Joomla\CMS\Event\AbstractEvent;
 
 defined('_JEXEC') or die;
 
-$payload = file_get_contents('php://input');
-
-if ($payload !== false && $payload !== '')
-{
-	$update = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
-	$callbackId = $update['callback']['callback_id'] ?? null;
-
-	if ($callbackId !== null)
-	{
-		Wtmax::getInstance()->messages()->answerCallback(
-			(string) $callbackId,
-			(new CallbackAnswerPayload())->withNotification('Кнопка обработана')
-		);
-	}
-}
-```
-
-## Если нужен ручной экземпляр Max
-
-`Wtmax::getInstance()` удобен для обычной работы в Joomla, но при необходимости SDK можно собрать вручную.
-
-```php
-<?php
-
-declare(strict_types=1);
-
-require_once JPATH_LIBRARIES . '/Webtolk/Wtmax/src/libraries/vendor/autoload.php';
-
-use Joomla\Http\HttpFactory;
-use Laminas\Diactoros\RequestFactory;
-use Laminas\Diactoros\StreamFactory;
-use Webtolk\Max\Config\MaxConfig;
-use Webtolk\Max\Max;
-use Psr\Log\NullLogger;
-
-defined('_JEXEC') or die;
-
-$token = 'YOUR_BOT_TOKEN';
-
-$max = new Max(
-	new MaxConfig($token),
-	new NullLogger()
-);
-
-$max->setTransport(
-	(new HttpFactory())->getHttp([], ['curl', 'stream']),
-	new RequestFactory(),
-	new StreamFactory(),
-);
-```
-
-## Где хранится токен
-
-Токен хранится в параметрах системного плагина `System - WT Max`.
-
-Основные параметры:
-
-- `Токен бота MAX`
-- `Логировать в отдельный файл`
-- `Имя лог-файла`
-- `MAX chat_id по умолчанию` для исходящих сообщений
-- параметры webhook-подписки: включение вебхуков, секрет, URL, типы обновлений, allow-list `chat_id`
-
-## Исходящие сообщения
-
-Системный плагин `System - WT Max` может выступать общей точкой отправки сообщений из других Joomla-расширений. Расширение вызывает событие `onWtmaxSendMessage`, а плагин отправляет сообщение через сохранённый токен WT Max.
-
-```php
-<?php
-
-$event = \Joomla\CMS\Event\AbstractEvent::create('onWtmaxSendMessage', [
+$event = AbstractEvent::create('onWtmaxSendMessage', [
 	'subject' => $this,
-	'message' => $message,
+	'message' => '<p>Новый заказ создан</p>',
 	'attachments' => [
-		['type' => 'image', 'path' => '/images/example.jpg'],
-		['type' => 'link', 'url' => 'https://example.com', 'text' => 'Открыть'],
+		[
+			'type' => 'image',
+			'path' => 'images/orders/order-10.jpg',
+		],
+		[
+			'type' => 'link',
+			'url' => 'https://example.com/administrator/index.php?option=com_example&view=order&id=10',
+			'text' => 'Открыть заказ',
+		],
 	],
 	'params' => [
-		'context' => 'com_content.article',
+		'context' => 'com_example.order',
 		'item_id' => 10,
-		'chat_id' => 123456,
 		'notify' => true,
 		'disable_link_preview' => false,
 	],
@@ -237,58 +125,192 @@ $this->getApplication()->getDispatcher()->dispatch($event->getName(), $event);
 $result = $event->getArgument('result', []);
 ```
 
-Если `params['chat_id']` не передан, используется `MAX chat_id по умолчанию` из настроек плагина. Файловые вложения принимаются только как локальные пути внутри корня сайта Joomla. Поддерживаемые типы: `image`, `video`, `audio`, `file`, `link`; для `link` разрешены только URL со схемой `http` или `https`. Если тип файлового вложения не передан, он определяется по MIME-типу.
+Если `params['chat_id']` не передан, используется `MAX chat_id по умолчанию` из настроек плагина.
 
-Успешные отправки сохраняются в таблицу `#__plg_system_wtmax_messages` с `message_id`, `chat_id`, `context`, `item_id`, количеством вложений и timestamp.
+### Аргументы `onWtmaxSendMessage`
 
-## Webhooks
+- `message` - текст сообщения. HTML преобразуется в читаемый plain text.
+- `attachments` - массив вложений.
+- `link` - отдельный URL или HTML-ссылка, которая будет преобразована в inline link-кнопку.
+- `params['chat_id']` - chat ID получателя; если не передан, используется default chat из настроек.
+- `params['context']` и `params['item_id']` - произвольная привязка для audit-записи.
+- `params['notify']` - передаётся в MAX payload.
+- `params['disable_link_preview']` - отключает preview ссылок в сообщении.
 
-В настройках системного плагина `System - WT Max` есть отдельная группа `Вебхуки`.
+Результат записывается обратно в `$event->getArgument('result')`:
 
-Что делает плагин:
+```php
+[
+	'success' => true,
+	'message' => $sentMessage->toArray(),
+]
+```
 
-- генерирует секрет webhook-подписки;
-- показывает URL для копирования, где секрет уже добавлен в query-параметр;
-- создаёт и удаляет подписку через MAX API;
-- показывает список текущих подписок MAX;
-- принимает входящие webhook-запросы через `com_ajax`;
-- проверяет включение вебхуков, query secret, заголовок `X-Max-Bot-Api-Secret`, JSON body и allow-list `chat_id`;
-- импортирует группы плагинов `system` и `wtmax`;
-- dispatch события `onWtmaxIncomingWebhook` с классом `Webtolk\Wtmax\Event\WebhookEvent`.
+или:
 
-Если список разрешённых `chat_id` пустой, плагин принимает все валидные входящие webhook-запросы и оставляет дальнейшую маршрутизацию разработчикам обработчиков.
+```php
+[
+	'success' => false,
+	'error' => 'Описание ошибки',
+]
+```
 
-## Поля Joomla Form
+### Вложения
 
-Поля библиотеки, их назначение и примеры подключения в XML вынесены в отдельный файл:
+Поддерживаются:
 
-- [JOOMLA-FORM-FIELDS.md](./JOOMLA-FORM-FIELDS.md)
+- строка с локальным путём внутри `JPATH_ROOT`;
+- массив `['type' => 'image|video|audio|file', 'path' => '...']`;
+- массив `['type' => 'link', 'url' => 'https://...', 'text' => '...']`;
+- готовый объект SDK `AttachmentPayloadInterface`.
 
-Коротко:
+Для файловых вложений путь должен указывать на локальный файл внутри корня сайта Joomla. Если `type` не указан, тип загрузки определяется по MIME-типу файла. Для `link` разрешены только URL со схемой `http` или `https`.
 
-- поля библиотеки подключаются через `Webtolk\Wtmax\Field`
-- сейчас доступны `connectionstatus`, `chatmodalselect`, `chatinfo`, `webhooksecret`, `webhookurl`, `webhookactions`, `subscriptionslist`
-- `chatmodalselect` требует Joomla `5.0+` и использует точку AJAX системного плагина `System - WT Max`
+## Default chat
+
+В настройках `System - WT Max` есть поле `MAX chat_id по умолчанию`.
+
+Администратор выбирает чат через ModalSelect, а поле `chatinfo` показывает найденную карточку чата: title, `chat_id`, тип, статус, количество участников и ссылку, если она есть.
+
+Default chat используется только для `onWtmaxSendMessage`, когда событие не передало `params['chat_id']`.
+
+## Входящие webhooks
+
+В настройках `System - WT Max` есть группа `Вебхуки`.
+
+Плагин умеет:
+
+- генерировать webhook secret;
+- показывать callback URL с query `secret`;
+- создавать MAX webhook-подписку;
+- показывать все подписки и подписки текущего сайта;
+- удалять выбранные подписки текущего сайта;
+- принимать входящие запросы MAX через `com_ajax`;
+- проверять query `secret`, заголовок `X-Max-Bot-Api-Secret`, JSON body и allow-list `chat_id`;
+- отправлять событие `onWtmaxIncomingWebhook`.
+
+Если `Разрешённые chat_id` пустой, плагин принимает все валидные входящие webhook-запросы. Если список заполнен, каждый `chat_id` указывается с новой строки.
+
+## Обработчик входящего webhook
+
+Другие плагины могут слушать `onWtmaxIncomingWebhook`. Событие передаётся классом `Webtolk\Wtmax\Event\WebhookEvent`.
+
+Минимальный пример системного плагина:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace Joomla\Plugin\System\Example\Extension;
+
+use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\Event\SubscriberInterface;
+use Webtolk\Wtmax\Event\WebhookEvent;
+
+defined('_JEXEC') or die;
+
+final class Example extends CMSPlugin implements SubscriberInterface
+{
+	public static function getSubscribedEvents(): array
+	{
+		return [
+			'onWtmaxIncomingWebhook' => 'handleWtmaxWebhook',
+		];
+	}
+
+	public function handleWtmaxWebhook(WebhookEvent $event): void
+	{
+		$updateType = $event->getUpdateType();
+		$message = $event->getMessage();
+		$chatId = $event->getChatId();
+		$data = $event->getData();
+
+		if ($updateType !== 'message_created' || $message === null)
+		{
+			return;
+		}
+
+		// Здесь размещается прикладная логика вашего расширения.
+	}
+}
+```
+
+Методы `WebhookEvent`:
+
+- `getData(): array` - исходный payload;
+- `getUpdate(): ?Webtolk\Max\Entity\Update` - типизированный SDK update;
+- `getUpdateType(): ?string`;
+- `getMessage(): ?Webtolk\Max\Entity\Message`;
+- `getChatId(): ?int`;
+- `getAllowedChatIds(): array`;
+- `isAllowedChat(): bool`.
+
+## Joomla Form поля
+
+Поля библиотеки подключаются через namespace:
+
+```xml
+addfieldprefix="Webtolk\Wtmax\Field"
+```
+
+Доступные поля:
+
+- `connectionstatus` - статус подключения к MAX API;
+- `chatmodalselect` - выбор MAX-чата через Joomla ModalSelect;
+- `chatinfo` - карточка выбранного чата из другого поля;
+- `webhooksecret` - генерация и хранение webhook secret;
+- `webhookurl` - callback URL для входящего webhook;
+- `webhookactions` - кнопки создания/удаления webhook-подписки;
+- `subscriptionslist` - список MAX webhook-подписок.
+
+Пример:
+
+```xml
+<fields name="params" addfieldprefix="Webtolk\Wtmax\Field">
+	<fieldset name="basic">
+		<field
+			type="chatmodalselect"
+			name="max_chat_id"
+			label="MAX chat"
+		/>
+		<field
+			type="chatinfo"
+			name="max_chat_info"
+			chat_field="max_chat_id"
+		/>
+	</fieldset>
+</fields>
+```
+
+Подробные примеры полей вынесены в [JOOMLA-FORM-FIELDS.md](./JOOMLA-FORM-FIELDS.md).
 
 ## Логирование
 
-Если включён переключатель логирования, библиотека пишет в отдельный файл в каталоге логов Joomla:
+В настройках плагина можно включить отдельный лог-файл SDK.
+
+Параметры:
+
+- `Логировать в отдельный файл`;
+- `Имя лог-файла`.
+
+Если имя файла не указано, используется:
 
 ```text
-/logs/wtmax.log
+wtmax.log
 ```
 
-Поле `Log file name` задаёт только имя файла без пути. Если поле оставить пустым, используется `wtmax.log`.
-
-## Ограничения
-
-- Пакет создаёт точку входа Joomla для входящих webhook-запросов MAX, но не содержит прикладной бизнес-обработчик этих событий.
-- Поле `chatmodalselect` работает только на Joomla `5.0+`.
-- Поле выбора чата зависит от системного плагина `System - WT Max`, потому что список чатов запрашивается через его AJAX-точку.
-- В текущем пакете реализован выбор `chat_id`; отдельный универсальный выбор `user_id` не входит в поставку.
+Файл создаётся в каталоге логов Joomla.
 
 ## Сборка
 
-Сборка пакета выполняется на GitHub.
+Релизный пакет собирается на GitHub.
 
-Во время сборки из апстримного репозитория `webtolk/max` автоматически подтягивается актуальная версия SDK, после чего на её основе собирается Joomla-пакет.
+Во время сборки GitHub Actions подтягивает актуальный Composer-пакет `webtolk/max`, копирует runtime `src` SDK в Joomla package tree и собирает ZIP для GitHub Release.
+
+Локально для разработки можно использовать:
+
+```bash
+composer update webtolk/max
+php build/release.php package-from-lock --package=webtolk/max
+```
