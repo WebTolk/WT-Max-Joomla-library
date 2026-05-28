@@ -237,7 +237,7 @@ $this->getApplication()->getDispatcher()->dispatch($event->getName(), $event);
 $result = $event->getArgument('result', []);
 ```
 
-Если `params['chat_id']` не передан, используется `MAX chat_id по умолчанию` из настроек плагина. Файловые вложения принимаются только как локальные пути внутри корня сайта Joomla. Поддерживаемые типы: `image`, `video`, `audio`, `file`, `link`; если тип файлового вложения не передан, он определяется по MIME-типу.
+Если `params['chat_id']` не передан, используется `MAX chat_id по умолчанию` из настроек плагина. Файловые вложения принимаются только как локальные пути внутри корня сайта Joomla. Поддерживаемые типы: `image`, `video`, `audio`, `file`, `link`; для `link` разрешены только URL со схемой `http` или `https`. Если тип файлового вложения не передан, он определяется по MIME-типу.
 
 Успешные отправки сохраняются в таблицу `#__plg_system_wtmax_messages` с `message_id`, `chat_id`, `context`, `item_id`, количеством вложений и timestamp.
 

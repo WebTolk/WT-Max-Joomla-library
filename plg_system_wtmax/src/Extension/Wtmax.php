@@ -30,6 +30,7 @@ use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
+use Joomla\Utilities\ArrayHelper;
 use RuntimeException;
 use Throwable;
 use Webtolk\Max\Entity\Chat;
@@ -87,6 +88,11 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 		if ($action === '')
 		{
 			throw new InvalidArgumentException(Text::_('PLG_WTMAX_AJAX_ERROR_ACTION_REQUIRED'), 400);
+		}
+
+		if (in_array($action, ['createwebhook', 'deletewebhook'], true) && $app->getInput()->getMethod() !== 'POST')
+		{
+			throw new InvalidArgumentException(Text::_('PLG_WTMAX_AJAX_ERROR_POST_REQUIRED'), 405);
 		}
 
 		switch ($action)
@@ -544,7 +550,7 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 	{
 		$url = trim((string) ($attachment['url'] ?? $attachment['href'] ?? ''));
 
-		if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false)
+		if (!$this->isSafeOutboundLinkUrl($url))
 		{
 			throw new InvalidArgumentException(Text::_('PLG_WTMAX_OUTBOUND_ERROR_LINK_URL_INVALID'));
 		}
@@ -656,7 +662,7 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 			$url = trim($matches[1]);
 			$text = trim($this->normalizeOutboundText($matches[2]));
 
-			if (filter_var($url, FILTER_VALIDATE_URL))
+			if ($this->isSafeOutboundLinkUrl($url))
 			{
 				return [
 					'text' => $text !== '' ? $text : Text::_('PLG_WTMAX_OUTBOUND_LINK_DEFAULT_TEXT'),
@@ -667,7 +673,7 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 
 		$plainLink = trim(strip_tags($link));
 
-		if (filter_var($plainLink, FILTER_VALIDATE_URL))
+		if ($this->isSafeOutboundLinkUrl($plainLink))
 		{
 			return [
 				'text' => Text::_('PLG_WTMAX_OUTBOUND_LINK_DEFAULT_TEXT'),
@@ -676,6 +682,18 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 		}
 
 		return null;
+	}
+
+	private function isSafeOutboundLinkUrl(string $url): bool
+	{
+		if (filter_var($url, FILTER_VALIDATE_URL) === false)
+		{
+			return false;
+		}
+
+		$scheme = parse_url($url, PHP_URL_SCHEME);
+
+		return is_string($scheme) && in_array(strtolower($scheme), ['http', 'https'], true);
 	}
 
 	/**
@@ -851,17 +869,8 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 			return [];
 		}
 
-		$chatIds = [];
-
-		foreach (preg_split('~[\s,;]+~', $value) ?: [] as $item)
-		{
-			$item = trim($item);
-
-			if ($item !== '' && ctype_digit($item))
-			{
-				$chatIds[] = (int) $item;
-			}
-		}
+		$chatIds = ArrayHelper::toInteger(preg_split('~\R+~', trim($value)) ?: []);
+		$chatIds = array_filter($chatIds, static fn (int $chatId): bool => $chatId !== 0);
 
 		return array_values(array_unique($chatIds));
 	}

@@ -34,9 +34,10 @@ final class WebhookactionsField extends FormField
 
 		$createUrl = $this->buildActionUrl('createWebhook');
 		$deleteUrl = $this->buildActionUrl('deleteWebhook');
+		$tokenName = Session::getFormToken();
 		$app->getDocument()->addScriptDeclaration($this->getScript());
 
-		return '<div class="wtmax-webhook-actions">'
+		return '<div class="wtmax-webhook-actions" data-token-name="' . htmlspecialchars($tokenName, ENT_QUOTES, 'UTF-8') . '">'
 			. '<div class="d-flex flex-wrap gap-2">'
 			. '<button type="button" class="btn btn-success" data-wtmax-webhook-action="create" data-url="' . htmlspecialchars($createUrl, ENT_QUOTES, 'UTF-8') . '">'
 			. '<span class="icon-new" aria-hidden="true"></span> ' . Text::_('LIB_WEBTOLK_MAX_WEBHOOK_ACTION_CREATE')
@@ -59,7 +60,6 @@ final class WebhookactionsField extends FormField
 				'group' => 'system',
 				'format' => 'raw',
 				'action' => $action,
-				Session::getFormToken() => 1,
 			]
 		);
 
@@ -132,6 +132,11 @@ final class WebhookactionsField extends FormField
 
 		var container = button.closest('.wtmax-webhook-actions') || document;
 		var formData = new FormData();
+		var tokenName = container.dataset ? (container.dataset.tokenName || '') : '';
+
+		if (tokenName) {
+			formData.append(tokenName, '1');
+		}
 
 		if (button.dataset.wtmaxWebhookAction === 'delete') {
 			var urls = selectedUrls();
