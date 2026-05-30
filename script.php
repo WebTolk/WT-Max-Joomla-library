@@ -24,6 +24,15 @@ use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 
 return new class () implements ServiceProviderInterface {
+	/**
+	 * Register the package installer script in Joomla's dependency injection container.
+	 *
+	 * @param   Container  $container  The installer DI container.
+	 *
+	 * @return  void
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	public function register(Container $container): void
 	{
 		$container->set(
@@ -34,32 +43,86 @@ return new class () implements ServiceProviderInterface {
 				private string $minimumJoomla = '4.4.0';
 				private string $minimumPhp = '8.1';
 
+				/**
+				 * Create the package installer helper with application and database access.
+				 *
+				 * @param   AdministratorApplication  $app  The administrator application used for installer messages.
+				 *
+				 * @since  __DEPLOY_VERSION__
+				 */
 				public function __construct(AdministratorApplication $app)
 				{
 					$this->app = $app;
 					$this->db  = Factory::getContainer()->get('DatabaseDriver');
 				}
 
+				/**
+				 * Handle package installation after child extensions have been copied.
+				 *
+				 * @param   InstallerAdapter  $adapter  The package installer adapter.
+				 *
+				 * @return  bool  True because package-specific install work is handled in postflight.
+				 *
+				 * @since  __DEPLOY_VERSION__
+				 */
 				public function install(InstallerAdapter $adapter): bool
 				{
 					return true;
 				}
 
+				/**
+				 * Handle package uninstallation after child extensions have been removed.
+				 *
+				 * @param   InstallerAdapter  $adapter  The package installer adapter.
+				 *
+				 * @return  bool  True because package uninstall has no extra cleanup here.
+				 *
+				 * @since  __DEPLOY_VERSION__
+				 */
 				public function uninstall(InstallerAdapter $adapter): bool
 				{
 					return true;
 				}
 
+				/**
+				 * Handle package updates after Joomla has updated the child extensions.
+				 *
+				 * @param   InstallerAdapter  $adapter  The package installer adapter.
+				 *
+				 * @return  bool  True because update-specific messaging is handled in postflight.
+				 *
+				 * @since  __DEPLOY_VERSION__
+				 */
 				public function update(InstallerAdapter $adapter): bool
 				{
 					return true;
 				}
 
+				/**
+				 * Validate the environment before Joomla installs, updates, or uninstalls the package.
+				 *
+				 * @param   string            $type     The installer action type.
+				 * @param   InstallerAdapter  $adapter  The package installer adapter.
+				 *
+				 * @return  bool  True when Joomla and PHP versions satisfy the package requirements.
+				 *
+				 * @since  __DEPLOY_VERSION__
+				 */
 				public function preflight(string $type, InstallerAdapter $adapter): bool
 				{
 					return $this->checkCompatible();
 				}
 
+				/**
+				 * Show the package postflight message and enable the WT Max system plugin when appropriate.
+				 *
+				 * @param   string            $type     The installer action type.
+				 * @param   InstallerAdapter  $adapter  The package installer adapter.
+				 *
+				 * @return  bool  True after the installer message has been queued.
+				 *
+				 * @since  __DEPLOY_VERSION__
+				 */
 				public function postflight(string $type, InstallerAdapter $adapter): bool
 				{
 					if ($type !== 'uninstall')
@@ -104,6 +167,13 @@ return new class () implements ServiceProviderInterface {
 					return true;
 				}
 
+				/**
+				 * Check the current Joomla and PHP versions before package installation continues.
+				 *
+				 * @return  bool  True when the runtime is compatible with this package.
+				 *
+				 * @since  __DEPLOY_VERSION__
+				 */
 				private function checkCompatible(): bool
 				{
 					if (!(new Version())->isCompatible($this->minimumJoomla))
@@ -129,6 +199,13 @@ return new class () implements ServiceProviderInterface {
 					return true;
 				}
 
+				/**
+				 * Publish the WT Max system plugin after package install or update.
+				 *
+				 * @return  void
+				 *
+				 * @since  __DEPLOY_VERSION__
+				 */
 				private function enablePlugin(): void
 				{
 					$plugin          = new stdClass();

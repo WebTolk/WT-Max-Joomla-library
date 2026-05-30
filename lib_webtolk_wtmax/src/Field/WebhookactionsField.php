@@ -26,6 +26,13 @@ final class WebhookactionsField extends FormField
 {
 	protected $type = 'Webhookactions';
 
+	/**
+	 * Render administrator controls for creating and deleting MAX webhook subscriptions.
+	 *
+	 * @return  string  HTML buttons and status container wired to AJAX subscription actions.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getInput(): string
 	{
 		$app = Factory::getApplication();
@@ -50,6 +57,15 @@ final class WebhookactionsField extends FormField
 			. '</div>';
 	}
 
+	/**
+	 * Build a routed com_ajax URL for a WT Max webhook management action.
+	 *
+	 * @param   string  $action  The action name handled by the system plugin.
+	 *
+	 * @return  string  Routed administrator URL used by the field JavaScript.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function buildActionUrl(string $action): string
 	{
 		$url = (new Uri())->setPath(Uri::base(true) . '/index.php');
@@ -66,6 +82,13 @@ final class WebhookactionsField extends FormField
 		return Route::_((string) $url, false);
 	}
 
+	/**
+	 * Return the inline JavaScript that performs webhook create/delete AJAX requests.
+	 *
+	 * @return  string  JavaScript that submits CSRF-protected POST requests and refreshes the subscription list.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function getScript(): string
 	{
 		return <<<'JS'
@@ -97,9 +120,19 @@ final class WebhookactionsField extends FormField
 
 	function parseResponse(text) {
 		try {
-			return JSON.parse(text);
+			var payload = JSON.parse(text);
+
+			if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'success')) {
+				return {
+					success: payload.success !== false,
+					message: payload.message || '',
+					data: payload.data || null
+				};
+			}
+
+			return { success: false, message: text, data: null };
 		} catch (error) {
-			return { success: false, message: text };
+			return { success: false, message: text, data: null };
 		}
 	}
 

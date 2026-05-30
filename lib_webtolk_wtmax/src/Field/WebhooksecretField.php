@@ -21,6 +21,13 @@ final class WebhooksecretField extends FormField
 {
 	protected $type = 'Webhooksecret';
 
+	/**
+	 * Render the webhook secret input and generate a secret when the field is empty.
+	 *
+	 * @return  string  HTML text input containing the current or generated webhook secret.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getInput(): string
 	{
 		$value = trim((string) $this->value);
@@ -40,4 +47,3 @@ final class WebhooksecretField extends FormField
 			. ' spellcheck="false">';
 	}
 }
-

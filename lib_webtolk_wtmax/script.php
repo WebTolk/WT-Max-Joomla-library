@@ -34,6 +34,8 @@ return new class () implements ServiceProviderInterface {
 	 * @param   Container  $container  The DI container.
 	 *
 	 * @return  void
+	 *
+	 * @since  __DEPLOY_VERSION__
 	 */
 	public function register(Container $container): void
 	{
@@ -47,6 +49,8 @@ return new class () implements ServiceProviderInterface {
 				 * Constructor.
 				 *
 				 * @param   AdministratorApplication  $app  The application object.
+				 *
+				 * @since  __DEPLOY_VERSION__
 				 */
 				public function __construct(private readonly AdministratorApplication $app)
 				{
@@ -59,6 +63,8 @@ return new class () implements ServiceProviderInterface {
 				 * @param   InstallerAdapter  $adapter  The adapter calling this method.
 				 *
 				 * @return  bool  True on success.
+				 *
+				 * @since  __DEPLOY_VERSION__
 				 */
 				public function install(InstallerAdapter $adapter): bool
 				{
@@ -73,6 +79,8 @@ return new class () implements ServiceProviderInterface {
 				 * @param   InstallerAdapter  $adapter  The adapter calling this method.
 				 *
 				 * @return  bool  True on success.
+				 *
+				 * @since  __DEPLOY_VERSION__
 				 */
 				public function uninstall(InstallerAdapter $adapter): bool
 				{
@@ -88,6 +96,8 @@ return new class () implements ServiceProviderInterface {
 				 * @param   InstallerAdapter  $adapter  The adapter calling this method.
 				 *
 				 * @return  bool  True on success.
+				 *
+				 * @since  __DEPLOY_VERSION__
 				 */
 				public function update(InstallerAdapter $adapter): bool
 				{
@@ -103,6 +113,8 @@ return new class () implements ServiceProviderInterface {
 				 * @param   InstallerAdapter  $adapter  The adapter calling this method.
 				 *
 				 * @return  bool  True on success.
+				 *
+				 * @since  __DEPLOY_VERSION__
 				 */
 				public function preflight(string $type, InstallerAdapter $adapter): bool
 				{
@@ -136,6 +148,8 @@ return new class () implements ServiceProviderInterface {
 				 * @param   InstallerAdapter  $adapter  The adapter calling this method.
 				 *
 				 * @return  bool  True on success.
+				 *
+				 * @since  __DEPLOY_VERSION__
 				 */
 				public function postflight(string $type, InstallerAdapter $adapter): bool
 				{
@@ -155,6 +169,8 @@ return new class () implements ServiceProviderInterface {
 				 * @param   Installer|null          $installer  The installer instance.
 				 *
 				 * @return  bool  True on success.
+				 *
+				 * @since  __DEPLOY_VERSION__
 				 */
 				private function parseLayouts(?\SimpleXMLElement $element, ?Installer $installer): bool
 				{
@@ -213,6 +229,8 @@ return new class () implements ServiceProviderInterface {
 				 * @param   \SimpleXMLElement|null  $element  The manifest layouts element.
 				 *
 				 * @return  bool  True on success.
+				 *
+				 * @since  __DEPLOY_VERSION__
 				 */
 				private function removeLayouts(?\SimpleXMLElement $element): bool
 				{

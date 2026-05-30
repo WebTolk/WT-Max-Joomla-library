@@ -27,6 +27,17 @@ final class ChatmodalselectField extends ModalSelectField
 {
 	protected $type = 'Chatmodalselect';
 
+	/**
+	 * Configure Joomla's modal select field to open the WT Max chat picker.
+	 *
+	 * @param   \SimpleXMLElement  $element  The XML element for the form field.
+	 * @param   mixed              $value    The current field value.
+	 * @param   string|null        $group    The optional control group name.
+	 *
+	 * @return  bool  True when the field setup completed successfully.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	public function setup(\SimpleXMLElement $element, $value, $group = null)
 	{
 		$result = parent::setup($element, $value, $group);
@@ -64,6 +75,13 @@ final class ChatmodalselectField extends ModalSelectField
 		return $result;
 	}
 
+	/**
+	 * Resolve the stored chat id into a display title for the modal select control.
+	 *
+	 * @return  string  The chat title when it can be loaded, otherwise the raw stored value.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getValueTitle()
 	{
 		$value = (string) $this->value;
@@ -91,6 +109,15 @@ final class ChatmodalselectField extends ModalSelectField
 		return $value !== '' ? $value : (string) $this->value;
 	}
 
+	/**
+	 * Resolve the best human-readable title for a MAX chat shown in the selector.
+	 *
+	 * @param   Chat  $chat  The MAX chat entity.
+	 *
+	 * @return  string  The chat title, dialog user name, username fallback, or translated unknown title.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function resolveChatTitle(Chat $chat): string
 	{
 		$title = trim((string) ($chat->getTitle() ?? ''));

@@ -45,6 +45,8 @@ final class Wtmax
 	 * 	использованы сохранённые параметры системного плагина WT Max.
 	 *
 	 * @return Max Готовый к использованию экземпляр upstream SDK.
+	 *
+	 * @since  __DEPLOY_VERSION__
 	 */
 	public static function getInstance(?Registry $params = null): Max
 	{
@@ -93,6 +95,8 @@ final class Wtmax
 	 * @param Registry $params Параметры системного плагина WT Max.
 	 *
 	 * @return LoggerInterface PSR-3 logger для передачи в upstream MAX SDK.
+	 *
+	 * @since  __DEPLOY_VERSION__
 	 */
 	private static function createLogger(Registry $params): LoggerInterface
 	{
@@ -122,6 +126,13 @@ final class Wtmax
 
 		return new class($logger) extends AbstractLogger
 		{
+			/**
+			 * Создаёт прокси-logger над Joomla logger service.
+			 *
+			 * @param LoggerInterface $logger Базовый PSR-3 logger из Joomla container.
+			 *
+			 * @since  __DEPLOY_VERSION__
+			 */
 			public function __construct(
 				private readonly LoggerInterface $logger,
 			)
@@ -135,6 +146,10 @@ final class Wtmax
 			 * @param mixed $level PSR-3 уровень логирования.
 			 * @param Stringable|string $message Текст сообщения.
 			 * @param array $context Контекст логирования PSR-3.
+			 *
+			 * @return void
+			 *
+			 * @since  __DEPLOY_VERSION__
 			 */
 			public function log($level, Stringable|string $message, array $context = []): void
 			{

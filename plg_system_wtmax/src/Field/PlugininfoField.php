@@ -26,6 +26,13 @@ class PlugininfoField extends NoteField
 {
 	protected $type = 'Plugininfo';
 
+	/**
+	 * Render the WebTolk-branded plugin information block in the administrator form.
+	 *
+	 * @return  string  HTML with logo, version badge and translated plugin description.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getInput(): string
 	{
 		$data = $this->form->getData();
@@ -78,11 +85,25 @@ class PlugininfoField extends NoteField
 		</div>';
 	}
 
+	/**
+	 * Hide the default label because the field renders a full informational card.
+	 *
+	 * @return  string  An empty label.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getLabel(): string
 	{
 		return '';
 	}
 
+	/**
+	 * Return the title expected by Joomla's note field rendering.
+	 *
+	 * @return  string  The same value as the hidden label.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getTitle(): string
 	{
 		return $this->getLabel();

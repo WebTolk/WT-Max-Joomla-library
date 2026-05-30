@@ -24,6 +24,15 @@ use Joomla\Plugin\System\Wtmax\Extension\Wtmax;
 
 return new class implements ServiceProviderInterface
 {
+	/**
+	 * Register the WT Max system plugin in Joomla's dependency injection container.
+	 *
+	 * @param   Container  $container  The DI container used by Joomla to instantiate the plugin.
+	 *
+	 * @return  void
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	public function register(Container $container): void
 	{
 		$container->set(

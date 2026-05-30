@@ -23,10 +23,17 @@ use Throwable;
 use Webtolk\Max\Entity\Chat;
 use Webtolk\Wtmax\Wtmax;
 
-final class ChatinfoField extends FormField
+	final class ChatinfoField extends FormField
 {
 	protected $type = 'Chatinfo';
 
+	/**
+	 * Render the information card for the chat selected in a related plugin parameter.
+	 *
+	 * @return  string  HTML that shows the selected MAX chat, or an administrator warning when it cannot be resolved.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getInput(): string
 	{
 		$language = Factory::getApplication()->getLanguage();
@@ -62,11 +69,28 @@ final class ChatinfoField extends FormField
 		return $this->renderChat($chat, (int) $chatId);
 	}
 
+	/**
+	 * Hide the default form label because the field renders a full status block.
+	 *
+	 * @return  string  An empty label.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getLabel(): string
 	{
 		return '';
 	}
 
+	/**
+	 * Build the administrator HTML summary for a resolved MAX chat.
+	 *
+	 * @param   Chat  $chat    The MAX chat entity returned by the SDK.
+	 * @param   int   $chatId  The configured chat identifier.
+	 *
+	 * @return  string  Escaped HTML with chat title, id, type, status, participants and link.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function renderChat(Chat $chat, int $chatId): string
 	{
 		$title = $this->resolveChatTitle($chat);
@@ -117,6 +141,15 @@ final class ChatinfoField extends FormField
 		return $html;
 	}
 
+	/**
+	 * Resolve the best human-readable title for a MAX chat.
+	 *
+	 * @param   Chat  $chat  The MAX chat entity.
+	 *
+	 * @return  string  The chat title, dialog user name, username fallback, or translated unknown title.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function resolveChatTitle(Chat $chat): string
 	{
 		$title = trim((string) ($chat->getTitle() ?? ''));

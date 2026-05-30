@@ -26,6 +26,13 @@ class ConnectionstatusField extends FormField
 {
 	protected $type = 'Connectionstatus';
 
+	/**
+	 * Render the connection status block in place of the field label.
+	 *
+	 * @return  string  HTML that reports missing token, successful bot identity, or connection failure.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	public function getLabel(): string
 	{
 		$params = new Registry($this->form->getData()->get('params'));
@@ -84,11 +91,27 @@ class ConnectionstatusField extends FormField
 		return '</div><div class="alert alert-danger"><strong>' . Text::_('PLG_WTMAX_CONNECTION_FAIL') . '</strong><br>' . htmlspecialchars((string) $status['message'], ENT_QUOTES, 'UTF-8') . '</div><div>';
 	}
 
+	/**
+	 * Suppress the input element because this field is a read-only status display.
+	 *
+	 * @return  string  A placeholder string that keeps Joomla form rendering stable.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getInput(): string
 	{
 		return ' ';
 	}
 
+	/**
+	 * Check the configured bot token against the MAX API.
+	 *
+	 * @param   Registry  $params  The plugin parameters containing the bot token and logging settings.
+	 *
+	 * @return  array{success: bool, message: string, bot: BotInfo|null}  Connection result for the administrator status block.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function checkConnection(Registry $params): array
 	{
 		try
@@ -111,6 +134,15 @@ class ConnectionstatusField extends FormField
 		}
 	}
 
+	/**
+	 * Build a compact success message from the resolved bot identity.
+	 *
+	 * @param   BotInfo  $bot  The bot information returned by the MAX API.
+	 *
+	 * @return  string  Human-readable bot name, username and id details.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function buildSuccessMessage(BotInfo $bot): string
 	{
 		$parts = [];

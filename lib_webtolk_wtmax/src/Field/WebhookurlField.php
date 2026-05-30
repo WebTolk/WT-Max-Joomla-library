@@ -25,6 +25,13 @@ final class WebhookurlField extends FormField
 {
 	protected $type = 'Webhookurl';
 
+	/**
+	 * Render the read-only callback URL that must be registered as the MAX webhook endpoint.
+	 *
+	 * @return  string  HTML input with the absolute webhook URL, or a warning when no secret exists yet.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getInput(): string
 	{
 		Factory::getApplication()->getLanguage()->load('lib_webtolk_max', JPATH_SITE)

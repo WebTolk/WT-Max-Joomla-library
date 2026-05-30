@@ -29,11 +29,25 @@ final class SubscriptionslistField extends FormField
 {
 	protected $type = 'Subscriptionslist';
 
+	/**
+	 * Hide the default label because the subscription list renders its own heading and controls.
+	 *
+	 * @return  string  An empty label.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	public function getLabel(): string
 	{
 		return '';
 	}
 
+	/**
+	 * Render the MAX webhook subscriptions list for the plugin administrator form.
+	 *
+	 * @return  string  HTML showing all subscriptions and marking subscriptions that belong to the current site.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	protected function getInput(): string
 	{
 		Factory::getApplication()->getLanguage()->load('lib_webtolk_max', JPATH_SITE)
@@ -89,6 +103,15 @@ final class SubscriptionslistField extends FormField
 		);
 	}
 
+	/**
+	 * Build the current site's webhook URL for comparison with remote MAX subscriptions.
+	 *
+	 * @param   bool  $includeSecret  Whether to include the configured secret query parameter.
+	 *
+	 * @return  string  Absolute Joomla com_ajax webhook URL for this plugin.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function buildWebhookUrl(bool $includeSecret): string
 	{
 		$params = new Registry($this->form->getData()->get('params'));
@@ -109,6 +132,15 @@ final class SubscriptionslistField extends FormField
 		return rtrim(Uri::root(), '/') . '/index.php?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
 	}
 
+	/**
+	 * Check whether a remote subscription URL belongs to this Joomla site and WT Max endpoint.
+	 *
+	 * @param   string  $url  The subscription callback URL returned by MAX.
+	 *
+	 * @return  bool  True when the URL targets this site's WT Max webhook endpoint.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function isCurrentSiteWebhookUrl(string $url): bool
 	{
 		$candidate = parse_url($url);
@@ -148,13 +180,26 @@ final class SubscriptionslistField extends FormField
 		return true;
 	}
 
+	/**
+	 * Mask the webhook secret in a callback URL before rendering it in the administrator UI.
+	 *
+	 * @param   string  $url  The callback URL that may contain a `secret` query parameter.
+	 *
+	 * @return  string  The URL with the secret value replaced by a placeholder.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
 	private function maskSecret(string $url): string
 	{
 		return preg_replace('~([?&]secret=)[^&]+~', '$1***', $url) ?? $url;
 	}
 
 	/**
-	 * @return array<string, string>
+	 * Return the fixed query parameters that identify the WT Max webhook endpoint.
+	 *
+	 * @return  array<string, string>  Required Joomla com_ajax query parameters.
+	 *
+	 * @since  __DEPLOY_VERSION__
 	 */
 	private function getRequiredWebhookQuery(): array
 	{
