@@ -43,6 +43,7 @@ use Webtolk\Max\Payload\Attachment\Button\LinkButton;
 use Webtolk\Max\Payload\Attachment\InlineKeyboardAttachment;
 use Webtolk\Max\Payload\CreateSubscriptionPayload;
 use Webtolk\Max\Payload\NewMessageBody;
+use Webtolk\Max\Payload\TextFormat;
 use Webtolk\Max\Payload\UploadType;
 use Webtolk\Wtmax\Event\WebhookEvent;
 use Webtolk\Wtmax\Wtmax as WtmaxFacade;
@@ -540,7 +541,8 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 		?string $link,
 		array $messageParams
 	): NewMessageBody {
-		$text = $this->normalizeOutboundText($messageText);
+		$textFormat = $this->resolveOutboundTextFormat($messageParams);
+		$text = $textFormat === null ? $this->normalizeOutboundText($messageText) : trim($messageText);
 		$payloadAttachments = [];
 
 		foreach ($attachments as $attachment)
@@ -573,6 +575,11 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 		if ($text !== '')
 		{
 			$body = $body->withText($text);
+
+			if ($textFormat !== null)
+			{
+				$body = $body->withFormat($textFormat);
+			}
 		}
 
 		if ($payloadAttachments !== [])
@@ -586,6 +593,49 @@ final class Wtmax extends CMSPlugin implements SubscriberInterface
 		}
 
 		return $body;
+	}
+
+	/**
+	 * Resolve the optional MAX text format requested by the outbound event.
+	 *
+	 * @param   array<string, mixed>  $messageParams  Event-level message parameters.
+	 *
+	 * @return  TextFormat|null  Explicit MAX text format, or null for legacy plain text.
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 *
+	 * @throws  InvalidArgumentException  When the event supplies an unsupported text format.
+	 */
+	private function resolveOutboundTextFormat(array $messageParams): ?TextFormat
+	{
+		if (!array_key_exists('text_format', $messageParams)
+			|| $messageParams['text_format'] === null
+		)
+		{
+			return null;
+		}
+
+		$rawFormat = $messageParams['text_format'];
+
+		if (!is_scalar($rawFormat))
+		{
+			throw new InvalidArgumentException(Text::sprintf('PLG_WTMAX_OUTBOUND_ERROR_TEXT_FORMAT_INVALID', get_debug_type($rawFormat)));
+		}
+
+		$format = strtolower(trim((string) $rawFormat));
+
+		if ($format === '')
+		{
+			return null;
+		}
+
+		return match ($format)
+		{
+			'plain' => null,
+			'markdown' => TextFormat::MARKDOWN,
+			'html' => TextFormat::HTML,
+			default => throw new InvalidArgumentException(Text::sprintf('PLG_WTMAX_OUTBOUND_ERROR_TEXT_FORMAT_INVALID', (string) $rawFormat)),
+		};
 	}
 
 	/**
