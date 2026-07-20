@@ -115,6 +115,7 @@ $event = AbstractEvent::create('onWtmaxSendMessage', [
 	'params' => [
 		'context' => 'com_example.order',
 		'item_id' => 10,
+		'text_format' => 'plain',
 		'notify' => true,
 		'disable_link_preview' => false,
 	],
@@ -129,13 +130,38 @@ $result = $event->getArgument('result', []);
 
 ### Аргументы `onWtmaxSendMessage`
 
-- `message` - текст сообщения. HTML преобразуется в читаемый plain text.
+- `message` - текст сообщения. Если формат не указан, HTML преобразуется в читаемый plain text.
 - `attachments` - массив вложений.
 - `link` - отдельный URL или HTML-ссылка, которая будет преобразована в inline link-кнопку.
 - `params['chat_id']` - chat ID получателя; если не передан, используется default chat из настроек.
+- `params['text_format']` - формат текста: `plain`, `markdown` или `html`. Если параметр не передан, используется `plain` и сохраняется прежнее поведение.
 - `params['context']` и `params['item_id']` - произвольная привязка для audit-записи.
 - `params['notify']` - передаётся в MAX payload.
 - `params['disable_link_preview']` - отключает preview ссылок в сообщении.
+
+Для Markdown или HTML нужно явно передать формат:
+
+```php
+$event = AbstractEvent::create('onWtmaxSendMessage', [
+	'subject' => $this,
+	'message' => "**Новый заказ**\n\n- Номер: 10\n- Статус: создан",
+	'params' => [
+		'text_format' => 'markdown',
+	],
+]);
+```
+
+```php
+$event = AbstractEvent::create('onWtmaxSendMessage', [
+	'subject' => $this,
+	'message' => '<strong>Новый заказ</strong><br><em>Номер: 10</em>',
+	'params' => [
+		'text_format' => 'html',
+	],
+]);
+```
+
+Любое другое значение `params['text_format']` отклоняется до отправки. Значение по умолчанию остаётся `plain`, поэтому существующие интеграции не меняют поведение.
 
 Результат записывается обратно в `$event->getArgument('result')`:
 
